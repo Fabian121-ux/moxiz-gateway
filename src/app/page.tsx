@@ -302,12 +302,12 @@ export default function LandingPage() {
       </section>
 
       {/* Infrastructure Transparency */}
-      <section className="py-24 px-8 max-w-7xl mx-auto w-full">
-        <div className="bg-black/40 border border-white/10 rounded-3xl p-12 flex flex-col md:flex-row items-center justify-between gap-12 relative overflow-hidden">
+      <section className="py-24 px-4 md:px-8 max-w-7xl mx-auto w-full">
+        <div className="bg-black/40 border border-white/10 rounded-3xl p-6 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -mr-32 -mt-32" />
           
-          <div className="space-y-6 max-w-xl">
-            <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm bg-emerald-500/10 w-fit px-3 py-1 rounded-full border border-emerald-500/20">
+          <div className="space-y-6 max-w-xl text-center lg:text-left">
+            <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm bg-emerald-500/10 w-fit px-3 py-1 rounded-full border border-emerald-500/20 mx-auto lg:mx-0">
               <CheckCircle2 className="h-4 w-4" /> All Systems Operational
             </div>
             <h2 className="text-3xl font-bold font-headline">Transparency is our core API.</h2>
@@ -319,7 +319,7 @@ export default function LandingPage() {
             </Button>
           </div>
           
-          <div className="flex-1 grid grid-cols-2 gap-4 w-full md:max-w-xs">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full lg:max-w-md">
             {[
               { label: "Sandbox Uptime", val: "100%" },
               { label: "Webhook Lag", val: "<100ms" },
