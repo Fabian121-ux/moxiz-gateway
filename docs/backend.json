@@ -1,0 +1,81 @@
+
+{
+  "entities": {
+    "Merchant": {
+      "title": "Merchant",
+      "description": "A business account using the Moxiz gateway.",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "status": { "type": "string", "enum": ["ACTIVE", "PENDING", "SUSPENDED"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["businessName", "email", "status"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A payment record within the system.",
+      "type": "object",
+      "properties": {
+        "reference": { "type": "string" },
+        "amount": { "type": "number", "description": "Amount in cents" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "SUCCESS", "FAILED", "REVERSED"] },
+        "customerEmail": { "type": "string", "format": "email" },
+        "customerName": { "type": "string" },
+        "metadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reference", "amount", "currency", "status"]
+    },
+    "ApiKey": {
+      "title": "API Key",
+      "description": "Credentials for authenticating with the Moxiz API.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "publicKey": { "type": "string" },
+        "secretKey": { "type": "string" },
+        "environment": { "type": "string", "enum": ["TEST", "LIVE"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "publicKey", "secretKey", "environment"]
+    },
+    "WebhookEvent": {
+      "title": "Webhook Event",
+      "description": "A record of an event sent to a merchant's endpoint.",
+      "type": "object",
+      "properties": {
+        "eventType": { "type": "string" },
+        "payload": { "type": "object" },
+        "status": { "type": "string", "enum": ["SENT", "FAILED", "PENDING"] },
+        "retryCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventType", "status", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/merchants/{merchantId}": {
+      "schema": { "$ref": "#/backend/entities/Merchant" },
+      "description": "Top-level merchant profile data."
+    },
+    "/merchants/{merchantId}/apiKeys/{keyId}": {
+      "schema": { "$ref": "#/backend/entities/ApiKey" },
+      "description": "API keys associated with a merchant."
+    },
+    "/merchants/{merchantId}/transactions/{txId}": {
+      "schema": { "$ref": "#/backend/entities/Transaction" },
+      "description": "Transaction history for a merchant."
+    },
+    "/merchants/{merchantId}/webhooks/{whId}": {
+      "schema": { "$ref": "#/backend/entities/WebhookEvent" },
+      "description": "Webhook delivery logs for a merchant."
+    }
+  }
+}

@@ -13,8 +13,18 @@ import {
   Database,
   CheckCircle2,
   ChevronRight,
-  Braces
+  Braces,
+  Menu,
+  ChevronDown,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
@@ -28,13 +38,24 @@ export default function LandingPage() {
           </div>
           <span className="text-2xl font-bold tracking-tight text-foreground">Moxiz</span>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-          <Link href="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
-          <Link href="/api-reference" className="hover:text-foreground transition-colors">API Reference</Link>
-          <Link href="/status" className="hover:text-foreground transition-colors">System Status</Link>
-          <Link href="/changelog" className="hover:text-foreground transition-colors">Changelog</Link>
-        </div>
+        
         <div className="flex items-center gap-4">
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
+                  Resources <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild><Link href="/docs">Documentation</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/api-reference">API Reference</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/status">System Status</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/changelog">Changelog</Link></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">Sign in</Link>
           <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 rounded-full group">
             Start Building <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -44,13 +65,12 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative flex-1 flex flex-col items-center justify-center pt-20 pb-32 px-4 overflow-hidden">
-        {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(circle_at_center,rgba(84,142,250,0.08)_0%,transparent_70%)] pointer-events-none" />
         
         <div className="max-w-5xl mx-auto text-center z-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-1.5 rounded-full text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4">
             <Server className="h-3 w-3" />
-            <span className="uppercase tracking-widest">99.99% Uptime SLA Guaranteed</span>
+            <span className="uppercase tracking-widest">Reliability-focused architecture</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter text-foreground mb-8 leading-[1.1]">
@@ -89,7 +109,7 @@ export default function LandingPage() {
             <div className="flex-1 p-6 font-code text-sm overflow-hidden bg-black/20">
               <div className="flex flex-col gap-1">
                 <span className="text-primary">curl</span> <span className="text-accent">https://api.moxiz.io/v1/payments</span> \
-                <div className="pl-4">
+                <div className="pl-4 text-white/70">
                   -u sk_test_51Mz...: \<br />
                   -d amount=2000 \<br />
                   -d currency="usd" \<br />
@@ -118,7 +138,7 @@ export default function LandingPage() {
             <div className="bg-card border border-white/10 rounded-xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                  <Activity className="h-3 w-3 text-accent" /> Webhook Log
+                  <Activity className="h-3 w-3 text-accent" /> Sandbox Logs
                 </h4>
                 <span className="text-[10px] text-emerald-500 font-bold bg-emerald-500/10 px-2 py-0.5 rounded uppercase">Live</span>
               </div>
@@ -141,7 +161,7 @@ export default function LandingPage() {
 
             <div className="bg-card border border-white/10 rounded-xl p-6 shadow-xl flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">API Performance</h4>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Simulated API Latency</h4>
                 <div className="flex items-end gap-1 h-24">
                   {[40, 45, 38, 52, 60, 48, 42, 35, 39, 44, 50, 48, 40, 42].map((h, i) => (
                     <div 
@@ -153,8 +173,85 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs font-medium">
-                <span className="text-muted-foreground">P99 Latency</span>
+                <span className="text-muted-foreground">Demo Environment P99</span>
                 <span className="text-white">124ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Developer Sandbox Section */}
+      <section className="py-24 px-8 max-w-7xl mx-auto w-full">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div className="space-y-6">
+            <h2 className="text-4xl font-bold font-headline tracking-tight">Powerful Sandbox Environment</h2>
+            <p className="text-lg text-muted-foreground">
+              Mirror production behavior without moving actual funds. Test edge cases, simulate complex failure modes, and replay webhooks to ensure your backend is resilient.
+            </p>
+            <ul className="space-y-4">
+              {[
+                { title: "Simulate Failures", desc: "Trigger 402, 403, and 500 errors via specific test headers." },
+                { title: "Webhook Replay", desc: "Manually re-fire any event to test your delivery endpoints." },
+                { title: "Idempotency Tests", desc: "Ensure your system handles duplicate requests correctly." },
+              ].map((item, i) => (
+                <li key={i} className="flex gap-4">
+                  <div className="bg-accent/10 p-1 rounded h-fit mt-1">
+                    <CheckCircle2 className="h-4 w-4 text-accent" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div className="bg-card border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sandbox: Acme Corp (Test)</span>
+              <div className="flex gap-2">
+                <div className="h-2 w-2 rounded-full bg-accent" />
+                <span className="text-[10px] font-bold text-accent uppercase">Test Mode</span>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">API Keys</span>
+                <div className="p-3 bg-black/20 rounded-lg border border-white/5 font-code text-xs text-white/70 flex justify-between items-center">
+                  <span>sk_test_••••••••••••88jk</span>
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px]">Reveal</Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Simulate Event</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="h-8 text-[10px] gap-2">
+                    <RefreshCw className="h-3 w-3" /> Retry Webhook
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 text-[10px] gap-2 border-destructive/20 text-destructive/80">
+                    <AlertCircle className="h-3 w-3" /> Force Failure
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">Recent Test Payments</span>
+                <div className="space-y-2">
+                  {[
+                    { ref: "TX_SIM_881", amount: "$15.00", status: "Success" },
+                    { ref: "TX_SIM_902", amount: "$45.00", status: "Failed" },
+                  ].map((tx, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs p-2 bg-white/5 rounded">
+                      <span className="font-code">{tx.ref}</span>
+                      <span className="font-bold">{tx.amount}</span>
+                      <span className={cn(
+                        "text-[10px] font-bold uppercase",
+                        tx.status === "Success" ? "text-emerald-500" : "text-destructive"
+                      )}>{tx.status}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -218,13 +315,13 @@ export default function LandingPage() {
               Our status page provides real-time latency and uptime metrics for every regional endpoint. No black boxes, just infrastructure you can trust.
             </p>
             <Button variant="link" className="p-0 text-primary font-bold text-md h-auto hover:no-underline flex items-center gap-2 group">
-              Explore public status metrics <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              Explore sandbox metrics <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
           
           <div className="flex-1 grid grid-cols-2 gap-4 w-full md:max-w-xs">
             {[
-              { label: "API Uptime", val: "99.999%" },
+              { label: "Sandbox Uptime", val: "100%" },
               { label: "Webhook Lag", val: "<100ms" },
               { label: "Auth Latency", val: "45ms" },
               { label: "Success Rate", val: "99.98%" },
@@ -292,4 +389,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
