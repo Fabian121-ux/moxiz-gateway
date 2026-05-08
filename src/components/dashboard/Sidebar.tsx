@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -24,16 +26,31 @@ const navItems = [
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user: any;
+  merchant: any;
+}
+
+export function Sidebar({ user, merchant }: SidebarProps) {
   const pathname = usePathname();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    if (!auth) return;
+    await signOut(auth);
+    router.push("/");
+  };
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar h-screen sticky top-0 flex flex-col">
       <div className="p-6 flex items-center gap-3">
-        <div className="bg-primary p-2 rounded-lg">
-          <ShieldCheck className="h-6 w-6 text-white" />
-        </div>
-        <span className="text-xl font-bold tracking-tight text-foreground">Moxiz</span>
+        <Link href="/" className="flex items-center gap-3">
+          <div className="bg-primary p-2 rounded-lg">
+            <ShieldCheck className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-foreground">Moxiz</span>
+        </Link>
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-1">
@@ -41,7 +58,7 @@ export function Sidebar() {
           <Link key={item.href} href={item.href}>
             <div
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
                 pathname === item.href
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
@@ -63,7 +80,11 @@ export function Sidebar() {
           </div>
         </div>
         
-        <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive transition-colors"
+          onClick={handleSignOut}
+        >
           <LogOut className="h-4 w-4" />
           Sign Out
         </Button>
