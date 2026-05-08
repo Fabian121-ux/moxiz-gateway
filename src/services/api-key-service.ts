@@ -1,25 +1,38 @@
-/**
- * @fileOverview API Key management logic.
- */
 
-import { ApiKey } from '@/types';
+import { Firestore, collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { ApiKey } from '@/lib/types';
 
 export class ApiKeyService {
-  static async getKeysForMerchant(merchantId: string): Promise<ApiKey[]> {
-    return [
-      {
-        id: 'key_1',
-        name: 'Default Test Key',
-        publicKey: 'pk_test_51MzS2Z_moxiz_dev_99x',
-        secretKey: 'sk_test_51MzS2Z_moxiz_secret_v001_88jk',
-        environment: 'TEST',
-        createdAt: new Date().toISOString(),
-      }
-    ];
+  static async generateKey(
+    db: Firestore,
+    merchantId: string,
+    name: string,
+    env: 'TEST' | 'LIVE' = 'TEST'
+  ): Promise<void> {
+    const keysRef = collection(db, 'merchants', merchantId, 'apiKeys');
+    
+    const randomStr = (len: number) => Math.random().toString(36).substring(2, 2 + len);
+    const publicKey = `pk_${env.toLowerCase()}_${randomStr(24)}`;
+    const secretKey = `sk_${env.toLowerCase()}_${randomStr(32)}`;
+
+    const newKey: Omit<ApiKey, 'id'> = {
+      name,
+      publicKey,
+      secretKey,
+      environment: env,
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+    };
+
+    addDoc(keysRef, newKey);
   }
 
-  static async rotateKey(keyId: string): Promise<void> {
-    // Logic to generate new SK and update DB
-    console.log(`Rotating key: ${keyId}`);
+  static async revokeKey(
+    db: Firestore,
+    merchantId: string,
+    keyId: string
+  ): Promise<void> {
+    const keyRef = doc(db, 'merchants', merchantId, 'apiKeys', keyId);
+    setDoc(keyRef, { status: 'REVOKED' }, { merge: true });
   }
 }

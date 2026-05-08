@@ -1,17 +1,29 @@
-/**
- * @fileOverview Developer Dashboard Overview using standardized services.
- */
 
+"use client";
+
+import { useFirestore, useUser, useCollection } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useMemoFirebase } from "@/firebase/use-memo-firebase";
 import { OverviewCards } from "@/components/dashboard/OverviewCards";
 import { TransactionTable } from "@/components/dashboard/TransactionTable";
-import { TransactionService } from "@/services/transaction-service";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ArrowUpRight, Activity } from "lucide-react";
+import { PlusCircle, ArrowUpRight, Activity, Terminal } from "lucide-react";
 import Link from "next/link";
 
-export default async function DashboardPage() {
-  // Use service layer instead of direct mock imports to mirror real backend interaction
-  const recentTransactions = await TransactionService.getRecentTransactions('current-merchant-id', 5);
+export default function DashboardPage() {
+  const { user } = useUser();
+  const db = useFirestore();
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'merchants', user.uid, 'transactions'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+  }, [db, user]);
+
+  const { data: recentTransactions, loading } = useCollection(transactionsQuery);
 
   return (
     <div className="space-y-8">
@@ -21,11 +33,15 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground">Monitor your API performance and recent transaction flows.</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
-            View Analytics <ArrowUpRight className="h-4 w-4" />
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href="/dashboard/sandbox">
+              <Terminal className="h-4 w-4" /> Open Sandbox
+            </Link>
           </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90">
-            <PlusCircle className="h-4 w-4" /> Create Test Payment
+          <Button className="gap-2 bg-primary hover:bg-primary/90" asChild>
+            <Link href="/dashboard/sandbox">
+              <PlusCircle className="h-4 w-4" /> Create Test Payment
+            </Link>
           </Button>
         </div>
       </div>

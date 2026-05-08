@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
-  CreditCard, 
+  Terminal, 
   Code2, 
   Webhook, 
   History, 
@@ -21,6 +21,7 @@ import { signOut } from "firebase/auth";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Transactions", href: "/dashboard/transactions", icon: History },
+  { label: "Sandbox", href: "/dashboard/sandbox", icon: Terminal },
   { label: "Developers", href: "/dashboard/developers", icon: Code2 },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
