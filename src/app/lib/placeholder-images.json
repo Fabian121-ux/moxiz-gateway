@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "merchant-hero",
+      "description": "Clean fintech dashboard showing transaction graphs",
+      "imageUrl": "https://picsum.photos/seed/moxiz-1/1200/800",
+      "imageHint": "fintech dashboard"
+    },
+    {
+      "id": "avatar-merchant",
+      "description": "Professional merchant profile picture",
+      "imageUrl": "https://picsum.photos/seed/moxiz-2/200/200",
+      "imageHint": "professional person"
+    }
+  ]
+}
