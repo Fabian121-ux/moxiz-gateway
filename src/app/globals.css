@@ -49,3 +49,14 @@
 .font-code {
   font-family: 'Source Code Pro', monospace;
 }
+
+@keyframes loading-bar {
+  0% { transform: scaleX(0); opacity: 0.5; }
+  50% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0); opacity: 0.5; transform-origin: right; }
+}
+
+/* Ensure smooth transitions */
+.animate-loading-bar {
+  animation: loading-bar 1.5s infinite ease-in-out;
+}

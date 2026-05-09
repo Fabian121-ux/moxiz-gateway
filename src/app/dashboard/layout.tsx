@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { useUser, useFirestore } from "@/firebase";
 import { MerchantService } from "@/services/merchant-service";
 import { Merchant } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -28,8 +28,6 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function loadProfile() {
-      // In Mock mode, we still try to fetch Firestore data if db is present,
-      // but we handle missing DB gracefully.
       if (user) {
         if (db) {
           try {
@@ -48,7 +46,6 @@ export default function DashboardLayout({
             setLoadingMerchant(false);
           }
         } else {
-          // No DB at all, just mock it
           setMerchant({
             id: user.uid,
             businessName: 'Moxiz Demo Corp',
@@ -67,10 +64,55 @@ export default function DashboardLayout({
 
   if (authLoading || (user && loadingMerchant)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">Bootstrapping gateway environment...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="flex flex-col items-center gap-8 max-w-sm w-full">
+          <div className="relative">
+            {/* Pulsing Outer Ring */}
+            <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping" />
+            
+            {/* Brand Icon Box */}
+            <div className="relative bg-primary p-4 rounded-2xl shadow-2xl shadow-primary/20 border border-primary-foreground/10 flex items-center justify-center">
+              <ShieldCheck className="h-10 w-10 text-white animate-[pulse_2s_infinite]" />
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-2 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Moxiz <span className="text-primary/50 font-code font-normal text-sm">v1.0.4</span>
+            </h2>
+            <div className="flex items-center gap-1.5 h-1">
+              {[0, 1, 2].map((i) => (
+                <div 
+                  key={i} 
+                  className="w-8 h-1 rounded-full bg-primary/20 overflow-hidden"
+                >
+                  <div 
+                    className="w-full h-full bg-primary origin-left animate-[loading-bar_1.5s_infinite_ease-in-out]" 
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-4 animate-pulse">
+              Initializing Gateway Environment
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 w-full pt-4 border-t border-border/50">
+            {[
+              { label: "Auth Layer", status: "READY" },
+              { label: "Vault Simulation", status: "READY" },
+              { label: "API Handlers", status: "LOADING..." },
+              { label: "Webhook Engine", status: "WAITING" },
+            ].map((node) => (
+              <div key={node.label} className="flex justify-between items-center text-[10px] font-code">
+                <span className="text-muted-foreground">{node.label}</span>
+                <span className={node.status === 'READY' ? 'text-emerald-500' : 'text-primary animate-pulse'}>
+                  {node.status}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
