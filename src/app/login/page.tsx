@@ -7,16 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, ArrowRight, Loader2, Info } from "lucide-react";
+import { ShieldCheck, ArrowRight, Loader2, Info, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +33,10 @@ export default function LoginPage() {
         displayName: 'Demo Merchant'
       };
       localStorage.setItem('moxiz_session', JSON.stringify(mockUser));
-      router.push("/dashboard");
-      window.location.reload(); // Force refresh to update all hooks
+      
+      // Use window.location.href to force a clean state reload on navigation
+      // This prevents loops where the dashboard layout checks user state before it's ready
+      window.location.href = "/dashboard";
     } else {
       toast({
         variant: "destructive",
@@ -48,7 +50,6 @@ export default function LoginPage() {
   const loginAsDemo = () => {
     setEmail("demo@moxiz.dev");
     setPassword("password123");
-    // We'll let the user click sign in manually or trigger it
   };
 
   return (
@@ -101,14 +102,23 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Link href="#" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-background border-border/50"
-              />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"}
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-background border-border/50 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-bold" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -125,7 +135,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Button variant="outline" className="w-full border-border hover:bg-accent" onClick={() => { setEmail('demo@moxiz.dev'); setPassword('password123'); }} disabled={loading}>
+          <Button 
+            variant="outline" 
+            className="w-full border-border hover:bg-accent" 
+            onClick={() => { setEmail('demo@moxiz.dev'); setPassword('password123'); }} 
+            disabled={loading}
+          >
             Continue as Guest Merchant
           </Button>
         </CardContent>
