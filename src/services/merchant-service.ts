@@ -3,10 +3,12 @@
  * @fileOverview Business logic for Merchant management.
  */
 
-import { Firestore, doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { Firestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Merchant } from '@/lib/types';
 import { ApiKeyService } from './api-key-service';
 import { TransactionService } from './transaction-service';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export class MerchantService {
   /**
@@ -15,10 +17,26 @@ export class MerchantService {
    */
   static async ensureMerchantProfile(db: Firestore, userId: string, email: string): Promise<Merchant> {
     const merchantRef = doc(db, 'merchants', userId);
-    const snap = await getDoc(merchantRef);
+    
+    try {
+      const snap = await getDoc(merchantRef);
 
-    if (snap.exists()) {
-      return { id: snap.id, ...snap.data() } as Merchant;
+      if (snap.exists()) {
+        return { id: snap.id, ...snap.data() } as Merchant;
+      }
+    } catch (e: any) {
+      // If we are offline or get a connection error, throw a controlled error or return a mock
+      if (e.code === 'unavailable' || e.message?.includes('offline')) {
+        console.warn("Firestore unavailable, falling back to mock profile.");
+        return {
+          id: userId,
+          businessName: email === 'demo@moxiz.dev' ? 'Moxiz Demo Corp' : 'My Business',
+          email,
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString(),
+        } as Merchant;
+      }
+      throw e;
     }
 
     const businessName = email === 'demo@moxiz.dev' ? 'Moxiz Demo Corp' : 'My Business';
@@ -30,25 +48,32 @@ export class MerchantService {
       createdAt: new Date().toISOString(),
     };
 
-    await setDoc(merchantRef, newMerchant);
+    // Use non-blocking setDoc
+    setDoc(merchantRef, newMerchant, { merge: true })
+      .catch(async (err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: merchantRef.path,
+          operation: 'write',
+          requestResourceData: newMerchant
+        }));
+      });
 
     // If it's a demo user, seed initial data
     if (email === 'demo@moxiz.dev') {
-      await this.seedDemoData(db, userId);
+      this.seedDemoData(db, userId);
     } else {
       // Every merchant needs at least one API key to start
-      await ApiKeyService.generateKey(db, userId, 'Default Test Key', 'TEST');
+      ApiKeyService.generateKey(db, userId, 'Default Test Key', 'TEST');
     }
 
     return { id: userId, ...newMerchant } as Merchant;
   }
 
-  private static async seedDemoData(db: Firestore, userId: string) {
-    // 1. Generate API Keys
-    await ApiKeyService.generateKey(db, userId, 'Sandbox Legacy Key', 'TEST');
-    await ApiKeyService.generateKey(db, userId, 'Main Production Key', 'LIVE');
+  private static seedDemoData(db: Firestore, userId: string) {
+    // Generate initial infrastructure in background
+    ApiKeyService.generateKey(db, userId, 'Sandbox Legacy Key', 'TEST');
+    ApiKeyService.generateKey(db, userId, 'Main Production Key', 'LIVE');
 
-    // 2. Generate initial transactions
     const demoTransactions = [
       { amount: 25000, customerName: 'Marcus Engineer', customerEmail: 'dev.lead@startup.io', status: 'SUCCESS' as const },
       { amount: 1250, customerName: 'Alex Riviera', customerEmail: 'alex@cloud-services.net', status: 'FAILED' as const },
@@ -56,13 +81,20 @@ export class MerchantService {
       { amount: 3200, customerName: 'Jane Smith', customerEmail: 'jane.smith@design.co', status: 'PENDING' as const },
     ];
 
-    for (const tx of demoTransactions) {
-      await TransactionService.createTransaction(db, userId, tx);
-    }
+    demoTransactions.forEach(tx => {
+      TransactionService.createTransaction(db, userId, tx);
+    });
   }
 
   static async updateMerchant(db: Firestore, id: string, data: Partial<Merchant>): Promise<void> {
     const merchantRef = doc(db, 'merchants', id);
-    await setDoc(merchantRef, data, { merge: true });
+    setDoc(merchantRef, data, { merge: true })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: merchantRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      });
   }
 }

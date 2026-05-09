@@ -1,14 +1,16 @@
 
-import { Firestore, collection, doc, setDoc, serverTimestamp, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { Firestore, collection, doc, setDoc, addDoc } from 'firebase/firestore';
 import { Transaction, TransactionStatus } from '@/lib/types';
 import { WebhookService } from './webhook-service';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export class TransactionService {
   static async createTransaction(
     db: Firestore, 
     merchantId: string, 
     data: Partial<Transaction>
-  ): Promise<string> {
+  ): Promise<void> {
     const txRef = collection(db, 'merchants', merchantId, 'transactions');
     const reference = `MOX-${Math.floor(100000 + Math.random() * 900000)}`;
     
@@ -25,15 +27,21 @@ export class TransactionService {
       updatedAt: new Date().toISOString(),
     };
 
-    const docRef = await addDoc(txRef, newTx);
-    
-    // Trigger initial webhook
-    WebhookService.logEvent(db, merchantId, {
-      eventType: 'transaction.created',
-      payload: { transactionId: docRef.id, reference, status: newTx.status }
-    });
-
-    return docRef.id;
+    addDoc(txRef, newTx)
+      .then((docRef) => {
+        // Trigger initial webhook
+        WebhookService.logEvent(db, merchantId, {
+          eventType: 'transaction.created',
+          payload: { transactionId: docRef.id, reference, status: newTx.status }
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: txRef.path,
+          operation: 'create',
+          requestResourceData: newTx
+        }));
+      });
   }
 
   static async updateStatus(
@@ -47,12 +55,20 @@ export class TransactionService {
     setDoc(docRef, {
       status,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
-
-    // Trigger status change webhook
-    WebhookService.logEvent(db, merchantId, {
-      eventType: `transaction.${status.toLowerCase()}`,
-      payload: { transactionId, status }
-    });
+    }, { merge: true })
+      .then(() => {
+        // Trigger status change webhook
+        WebhookService.logEvent(db, merchantId, {
+          eventType: `transaction.${status.toLowerCase()}`,
+          payload: { transactionId, status }
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: { status }
+        }));
+      });
   }
 }

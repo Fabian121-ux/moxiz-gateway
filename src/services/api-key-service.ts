@@ -1,6 +1,8 @@
 
 import { Firestore, collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { ApiKey } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export class ApiKeyService {
   static async generateKey(
@@ -24,7 +26,14 @@ export class ApiKeyService {
       createdAt: new Date().toISOString(),
     };
 
-    addDoc(keysRef, newKey);
+    addDoc(keysRef, newKey)
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: keysRef.path,
+          operation: 'create',
+          requestResourceData: newKey
+        }));
+      });
   }
 
   static async revokeKey(
@@ -33,6 +42,13 @@ export class ApiKeyService {
     keyId: string
   ): Promise<void> {
     const keyRef = doc(db, 'merchants', merchantId, 'apiKeys', keyId);
-    setDoc(keyRef, { status: 'REVOKED' }, { merge: true });
+    setDoc(keyRef, { status: 'REVOKED' }, { merge: true })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: keyRef.path,
+          operation: 'update',
+          requestResourceData: { status: 'REVOKED' }
+        }));
+      });
   }
 }
