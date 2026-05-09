@@ -15,8 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/firebase";
-import { signOut } from "firebase/auth";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -34,13 +32,12 @@ interface SidebarProps {
 
 export function Sidebar({ user, merchant }: SidebarProps) {
   const pathname = usePathname();
-  const auth = useAuth();
   const router = useRouter();
 
-  const handleSignOut = async () => {
-    if (!auth) return;
-    await signOut(auth);
+  const handleSignOut = () => {
+    localStorage.removeItem('moxiz_session');
     router.push("/");
+    window.location.reload();
   };
 
   return (

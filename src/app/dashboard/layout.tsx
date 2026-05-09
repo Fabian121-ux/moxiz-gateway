@@ -28,13 +28,34 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function loadProfile() {
-      if (user && db) {
-        try {
-          const profile = await MerchantService.ensureMerchantProfile(db, user.uid, user.email!);
-          setMerchant(profile);
-        } catch (error) {
-          console.error("Failed to load merchant profile", error);
-        } finally {
+      // In Mock mode, we still try to fetch Firestore data if db is present,
+      // but we handle missing DB gracefully.
+      if (user) {
+        if (db) {
+          try {
+            const profile = await MerchantService.ensureMerchantProfile(db, user.uid, user.email!);
+            setMerchant(profile);
+          } catch (error) {
+            console.warn("Firestore not ready, using mock merchant profile.");
+            setMerchant({
+              id: user.uid,
+              businessName: 'Moxiz Demo Corp',
+              email: user.email!,
+              status: 'ACTIVE',
+              createdAt: new Date().toISOString()
+            } as Merchant);
+          } finally {
+            setLoadingMerchant(false);
+          }
+        } else {
+          // No DB at all, just mock it
+          setMerchant({
+            id: user.uid,
+            businessName: 'Moxiz Demo Corp',
+            email: user.email!,
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString()
+          } as Merchant);
           setLoadingMerchant(false);
         }
       }
@@ -68,12 +89,12 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-semibold text-foreground">
-                {merchant?.businessName || user.displayName || "Merchant Account"}
+                {merchant?.businessName || "Merchant Account"}
               </div>
               <div className="text-xs text-muted-foreground">{user.email}</div>
             </div>
             <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-xs font-bold text-primary uppercase">
-              {(merchant?.businessName || user.displayName || "M").slice(0, 2)}
+              {(merchant?.businessName || "M").slice(0, 2)}
             </div>
           </div>
         </header>

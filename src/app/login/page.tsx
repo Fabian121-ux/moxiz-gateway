@@ -3,8 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword } from "firebase/auth";
-import { useAuth } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -23,59 +20,35 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
     setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+    
+    // Simulate a brief network delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Mock validation
+    if (email === 'demo@moxiz.dev' && password === 'password123') {
+      const mockUser = {
+        uid: 'user_demo_123',
+        email: email,
+        displayName: 'Demo Merchant'
+      };
+      localStorage.setItem('moxiz_session', JSON.stringify(mockUser));
       router.push("/dashboard");
-    } catch (error: any) {
-      // If user doesn't exist and it's the demo account, try to create it
-      if (error.code === 'auth/user-not-found' && email === 'demo@moxiz.dev') {
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          router.push("/dashboard");
-          return;
-        } catch (createError) {
-          // fall through
-        }
-      }
+      window.location.reload(); // Force refresh to update all hooks
+    } else {
       toast({
         variant: "destructive",
         title: "Authentication Failed",
-        description: error.message || "Please check your credentials.",
+        description: "Invalid credentials. Use the demo account to log in.",
       });
-    } finally {
       setLoading(false);
     }
   };
 
-  const loginAsDemo = async () => {
+  const loginAsDemo = () => {
     setEmail("demo@moxiz.dev");
     setPassword("password123");
-    // Trigger login manually after state update would be tricky, 
-    // so we just call the logic directly or use a timeout
-    setTimeout(() => {
-      const form = document.querySelector('form');
-      form?.requestSubmit();
-    }, 100);
-  };
-
-  const handleGoogleLogin = async () => {
-    if (!auth) return;
-    setLoading(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Google Login Failed",
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
+    // We'll let the user click sign in manually or trigger it
   };
 
   return (
@@ -148,15 +121,12 @@ export default function LoginPage() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground font-semibold">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground font-semibold">Demo Sandbox</span>
             </div>
           </div>
 
-          <Button variant="outline" className="w-full border-border hover:bg-accent" onClick={handleGoogleLogin} disabled={loading}>
-            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-              <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-            </svg>
-            Google
+          <Button variant="outline" className="w-full border-border hover:bg-accent" onClick={() => { setEmail('demo@moxiz.dev'); setPassword('password123'); }} disabled={loading}>
+            Continue as Guest Merchant
           </Button>
         </CardContent>
         <CardFooter className="flex flex-wrap items-center justify-center gap-1 text-sm text-muted-foreground">
