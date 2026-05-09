@@ -43,7 +43,8 @@ export default function DashboardLayout({
               createdAt: new Date().toISOString()
             } as Merchant);
           } finally {
-            setLoadingMerchant(false);
+            // Speed up the transition for better UX
+            setTimeout(() => setLoadingMerchant(false), 400);
           }
         } else {
           setMerchant({
@@ -62,56 +63,44 @@ export default function DashboardLayout({
     }
   }, [user, db, authLoading]);
 
+  // Moxiz Custom Loading Animation (Lightweight & Integrated)
   if (authLoading || (user && loadingMerchant)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="flex flex-col items-center gap-8 max-w-sm w-full">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm z-50">
+        <div className="flex flex-col items-center gap-8 max-w-sm w-full animate-in fade-in zoom-in-95 duration-300">
           <div className="relative">
             {/* Pulsing Outer Ring */}
-            <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping" />
+            <div className="absolute -inset-4 rounded-full bg-primary/10 animate-ping opacity-50" />
             
             {/* Brand Icon Box */}
-            <div className="relative bg-primary p-4 rounded-2xl shadow-2xl shadow-primary/20 border border-primary-foreground/10 flex items-center justify-center">
-              <ShieldCheck className="h-10 w-10 text-white animate-[pulse_2s_infinite]" />
+            <div className="relative bg-primary p-5 rounded-2xl shadow-2xl shadow-primary/30 border border-white/10 flex items-center justify-center">
+              <ShieldCheck className="h-10 w-10 text-white animate-pulse" />
             </div>
           </div>
 
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              Moxiz <span className="text-primary/50 font-code font-normal text-sm">v1.0.4</span>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Moxiz <span className="text-primary/50 font-code font-normal text-xs px-2 py-0.5 border border-primary/20 rounded-md">v1.0.4</span>
             </h2>
-            <div className="flex items-center gap-1.5 h-1">
+            
+            {/* Faster, sleek loading bars */}
+            <div className="flex items-center gap-1.5 h-1 w-32 justify-center">
               {[0, 1, 2].map((i) => (
                 <div 
                   key={i} 
-                  className="w-8 h-1 rounded-full bg-primary/20 overflow-hidden"
+                  className="w-10 h-1 rounded-full bg-primary/10 overflow-hidden"
                 >
                   <div 
-                    className="w-full h-full bg-primary origin-left animate-[loading-bar_1.5s_infinite_ease-in-out]" 
-                    style={{ animationDelay: `${i * 0.2}s` }}
+                    className="w-full h-full bg-primary origin-left animate-loading-bar" 
+                    style={{ animationDelay: `${i * 0.15}s` }}
                   />
                 </div>
               ))}
             </div>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mt-4 animate-pulse">
-              Initializing Gateway Environment
+            
+            <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground mt-4 opacity-50">
+              Initializing Secure Environment
             </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 w-full pt-4 border-t border-border/50">
-            {[
-              { label: "Auth Layer", status: "READY" },
-              { label: "Vault Simulation", status: "READY" },
-              { label: "API Handlers", status: "LOADING..." },
-              { label: "Webhook Engine", status: "WAITING" },
-            ].map((node) => (
-              <div key={node.label} className="flex justify-between items-center text-[10px] font-code">
-                <span className="text-muted-foreground">{node.label}</span>
-                <span className={node.status === 'READY' ? 'text-emerald-500' : 'text-primary animate-pulse'}>
-                  {node.status}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -121,7 +110,7 @@ export default function DashboardLayout({
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background animate-in fade-in duration-500">
       <Sidebar user={user} merchant={merchant} />
       <main className="flex-1 overflow-y-auto">
         <header className="h-16 border-b border-border flex items-center justify-between px-8 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
