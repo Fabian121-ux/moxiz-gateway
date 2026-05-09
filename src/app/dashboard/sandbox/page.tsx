@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFirestore, useUser } from "@/firebase";
 import { TransactionService } from "@/services/transaction-service";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Terminal, Zap, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Terminal, Zap, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SandboxPage() {
@@ -17,6 +17,7 @@ export default function SandboxPage() {
   const db = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [feed, setFeed] = useState<string[]>(["Simulation initialized..."]);
 
   const [formData, setFormData] = useState({
     amount: "2500",
@@ -25,33 +26,48 @@ export default function SandboxPage() {
     status: "SUCCESS" as any
   });
 
+  const addToFeed = (msg: string) => {
+    setFeed(prev => [...prev.slice(-4), msg]);
+  };
+
   const handleSimulate = async () => {
     if (!db || !user) return;
     setLoading(true);
+    const amt = parseInt(formData.amount);
+    
+    addToFeed(`POST /v1/payments ${amt} ${formData.currency}`);
+    
     try {
       await TransactionService.createTransaction(db, user.uid, {
-        amount: parseInt(formData.amount),
+        amount: amt,
         currency: formData.currency,
         customerEmail: formData.email,
         status: formData.status
       });
-      toast({
-        title: "Simulation Triggered",
-        description: `Successfully simulated a ${formData.status} transaction.`,
-      });
+      
+      setTimeout(() => {
+        addToFeed(`Status: ${formData.status}`);
+        addToFeed(`Webhook queued: transaction.${formData.status.toLowerCase()}`);
+        toast({
+          title: "Simulation Triggered",
+          description: `Successfully simulated a ${formData.status} transaction.`,
+        });
+        setLoading(false);
+      }, 800);
+      
     } catch (error: any) {
+      addToFeed(`Error: ${error.message}`);
       toast({
         variant: "destructive",
         title: "Simulation Failed",
         description: error.message,
       });
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div>
         <h2 className="text-3xl font-bold font-headline tracking-tight text-foreground">Developer Sandbox</h2>
         <p className="text-muted-foreground">Test your integration by simulating various payment outcomes and webhook events.</p>
@@ -104,14 +120,14 @@ export default function SandboxPage() {
               </div>
             </div>
             <Button className="w-full gap-2" onClick={handleSimulate} disabled={loading}>
-              {loading ? <Clock className="h-4 w-4 animate-spin" /> : <Terminal className="h-4 w-4" />}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Terminal className="h-4 w-4" />}
               Run Simulation
             </Button>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="border-border/50 bg-card">
             <CardHeader>
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Sandbox Presets</CardTitle>
             </CardHeader>
@@ -133,13 +149,12 @@ export default function SandboxPage() {
               <Terminal className="h-4 w-4 text-accent" />
               Live Simulation Feed
             </h4>
-            <div className="space-y-2 font-code text-[10px] text-muted-foreground bg-black/40 p-4 rounded-lg border border-white/5">
-              <p className="text-emerald-500">{">"} Simulation initialized...</p>
-              <p>{">"} POST /v1/payments {formData.amount} {formData.currency}</p>
-              <p className={formData.status === 'FAILED' ? 'text-destructive' : 'text-primary'}>
-                {">"} Status: {formData.status}
-              </p>
-              <p>{">"} Webhook queued: transaction.{formData.status.toLowerCase()}</p>
+            <div className="space-y-1 font-code text-[10px] text-muted-foreground bg-black/40 p-4 rounded-lg border border-white/5 min-h-[100px]">
+              {feed.map((line, i) => (
+                <p key={i} className={line.includes('Error') ? 'text-destructive' : line.includes('Status: SUCCESS') ? 'text-emerald-500' : line.includes('initialized') ? 'text-primary' : ''}>
+                  {">"} {line}
+                </p>
+              ))}
             </div>
           </div>
         </div>
