@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, ArrowRight, Loader2, Info, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, ArrowRight, Loader2, Info, Eye, EyeOff, UserCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 
@@ -18,38 +17,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performMockLogin = async (userEmail: string, displayName: string) => {
     setLoading(true);
-    
-    // Simulate a brief network delay
+    // Simulate a brief network delay for realism
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Mock validation
-    if (email === 'demo@moxiz.dev' && password === 'password123') {
-      const mockUser = {
-        uid: 'user_demo_123',
-        email: email,
-        displayName: 'Demo Merchant'
-      };
-      localStorage.setItem('moxiz_session', JSON.stringify(mockUser));
-      
-      // Use window.location.href to force a clean state reload on navigation
-      // This prevents loops where the dashboard layout checks user state before it's ready
-      window.location.href = "/dashboard";
+    const mockUser = {
+      uid: 'user_demo_' + Math.random().toString(36).substring(7),
+      email: userEmail,
+      displayName: displayName
+    };
+    
+    localStorage.setItem('moxiz_session', JSON.stringify(mockUser));
+    window.location.href = "/dashboard";
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email && password) {
+      await performMockLogin(email, "Merchant User");
     } else {
       toast({
         variant: "destructive",
-        title: "Authentication Failed",
-        description: "Invalid credentials. Use the demo account to log in.",
+        title: "Missing Fields",
+        description: "Please enter an email and password or use Guest mode.",
       });
-      setLoading(false);
     }
   };
 
-  const loginAsDemo = () => {
-    setEmail("demo@moxiz.dev");
-    setPassword("password123");
+  const handleGuestLogin = async () => {
+    await performMockLogin("guest@moxiz.dev", "Guest Merchant");
   };
 
   return (
@@ -72,15 +69,10 @@ export default function LoginPage() {
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-3 mb-2">
             <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-semibold text-primary">Demo Mode Available</p>
-              <p className="text-[10px] text-muted-foreground">Use <span className="font-code">demo@moxiz.dev</span> / <span className="font-code">password123</span> to explore the gateway sandbox.</p>
-              <Button 
-                variant="link" 
-                className="h-auto p-0 text-[10px] font-bold text-primary mt-1"
-                onClick={loginAsDemo}
-              >
-                Auto-fill Demo Credentials
-              </Button>
+              <p className="text-xs font-semibold text-primary">Developer Sandbox Active</p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                You can explore the infrastructure by continuing as a guest. All data in this mode is for simulation purposes.
+              </p>
             </div>
           </div>
 
@@ -121,7 +113,7 @@ export default function LoginPage() {
               </div>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-white font-bold" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {loading && !email.includes('guest') ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Sign In <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
@@ -131,16 +123,17 @@ export default function LoginPage() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground font-semibold">Demo Sandbox</span>
+              <span className="bg-card px-2 text-muted-foreground font-semibold">Fast Track</span>
             </div>
           </div>
 
           <Button 
             variant="outline" 
-            className="w-full border-border hover:bg-accent" 
-            onClick={() => { setEmail('demo@moxiz.dev'); setPassword('password123'); }} 
+            className="w-full border-primary/20 hover:bg-primary/10 text-primary font-semibold gap-2" 
+            onClick={handleGuestLogin}
             disabled={loading}
           >
+            {loading && email.includes('guest') ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCircle className="h-4 w-4" />}
             Continue as Guest Merchant
           </Button>
         </CardContent>
