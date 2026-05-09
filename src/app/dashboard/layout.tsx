@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/Sidebar";
-import { useUser, useDoc, useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser, useFirestore } from "@/firebase";
+import { MerchantService } from "@/services/merchant-service";
+import { Merchant } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -14,11 +15,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, loading: authLoading } = useUser();
-  const firestore = useFirestore();
+  const db = useFirestore();
   const router = useRouter();
-
-  const merchantDocRef = user && firestore ? doc(firestore, "merchants", user.uid) : null;
-  const { data: merchant, loading: merchantLoading } = useDoc(merchantDocRef);
+  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [loadingMerchant, setLoadingMerchant] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -26,12 +26,30 @@ export default function DashboardLayout({
     }
   }, [user, authLoading, router]);
 
-  if (authLoading || merchantLoading) {
+  useEffect(() => {
+    async function loadProfile() {
+      if (user && db) {
+        try {
+          const profile = await MerchantService.ensureMerchantProfile(db, user.uid, user.email!);
+          setMerchant(profile);
+        } catch (error) {
+          console.error("Failed to load merchant profile", error);
+        } finally {
+          setLoadingMerchant(false);
+        }
+      }
+    }
+    if (!authLoading && user) {
+      loadProfile();
+    }
+  }, [user, db, authLoading]);
+
+  if (authLoading || (user && loadingMerchant)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">Loading infrastructure...</p>
+          <p className="text-sm text-muted-foreground font-medium">Bootstrapping gateway environment...</p>
         </div>
       </div>
     );
