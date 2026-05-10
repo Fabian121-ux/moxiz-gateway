@@ -8,18 +8,12 @@ import {
   Zap, 
   Code2, 
   Activity,
-  History,
   Server,
-  Database,
-  CheckCircle2,
-  ChevronRight,
   Braces,
   ChevronDown,
-  RefreshCw,
-  AlertCircle,
-  User,
   LogIn,
-  UserPlus
+  UserPlus,
+  Rocket
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -42,53 +36,59 @@ export default function LandingPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
-                  Resources <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild><Link href="/docs">Documentation</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/api-reference">API Reference</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/status">System Status</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/changelog">Changelog</Link></DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
+                    Resources <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild><Link href="/docs">Documentation</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/api-reference">API Reference</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/status">System Status</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link href="/changelog">Changelog</Link></DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
-                  Sign In <ChevronDown className="h-4 w-4" />
+                <Button variant="outline" className="text-sm font-bold border-primary/20 hover:bg-primary/10 text-primary gap-1 px-4 rounded-full">
+                  Access Portal <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2 cursor-pointer">
-                    <LogIn className="h-4 w-4" /> Merchant Portal
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2 cursor-pointer">
-                    <UserPlus className="h-4 w-4" /> Create Account
+              <DropdownMenuContent align="end" className="w-56 p-2">
+                <DropdownMenuItem asChild className="p-3">
+                  <Link href="/login" className="flex items-center gap-3 cursor-pointer text-primary font-bold">
+                    <Rocket className="h-5 w-5" />
+                    <div className="flex flex-col">
+                      <span>Start Building</span>
+                      <span className="text-[10px] font-normal text-muted-foreground">Get your test keys</span>
+                    </div>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2 cursor-pointer text-primary font-bold">
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                    <LogIn className="h-4 w-4 text-muted-foreground" /> Merchant Sign In
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                    <UserPlus className="h-4 w-4 text-muted-foreground" /> Create Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3 text-accent font-semibold">
                     <Zap className="h-4 w-4" /> Guest Access
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 rounded-full group" asChild>
-            <Link href="/login">
-              Start Building <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
         </div>
       </nav>
 
@@ -112,8 +112,10 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-            <Button size="lg" className="rounded-full bg-primary text-white h-12 px-8 text-md font-bold w-full sm:w-auto" asChild>
-              <Link href="/dashboard/developers">Get API Keys</Link>
+            <Button size="lg" className="rounded-full bg-primary text-white h-12 px-8 text-md font-bold w-full sm:w-auto group" asChild>
+              <Link href="/dashboard/developers">
+                Get API Keys <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
             <Button size="lg" variant="outline" className="rounded-full h-12 px-8 text-md font-bold bg-white/5 border-white/10 hover:bg-white/10 w-full sm:w-auto" asChild>
               <Link href="/docs/integration-guide">Read the Integration Guide</Link>
