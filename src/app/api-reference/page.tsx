@@ -1,17 +1,63 @@
+"use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ArrowLeft, Copy, Globe, Lock, User, CreditCard, RefreshCcw, Webhook } from "lucide-react";
+import { 
+  ShieldCheck, 
+  ArrowLeft, 
+  Copy, 
+  Globe, 
+  Lock, 
+  User, 
+  CreditCard, 
+  RefreshCcw, 
+  Webhook,
+  FileText
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function ApiReferencePage() {
+  const [activeSection, setActiveSection] = useState("introduction");
+
   const sections = [
+    { id: "introduction", label: "Introduction", icon: FileText },
     { id: "authentication", label: "Authentication", icon: Lock },
-    { id: "api-keys", label: "API Keys", icon: Lock },
+    { id: "api-keys", label: "API Keys", icon: Globe },
     { id: "payments", label: "Payments", icon: CreditCard },
     { id: "customers", label: "Customers", icon: User },
     { id: "refunds", label: "Refunds", icon: RefreshCcw },
     { id: "webhooks", label: "Webhooks", icon: Webhook },
   ];
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -70% 0px",
+      threshold: 0,
+    };
+
+    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
+
+    sections.forEach((section) => {
+      const element = document.getElementById(section.id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [sections]);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-body">
@@ -35,7 +81,12 @@ export default function ApiReferencePage() {
               <a
                 key={section.id}
                 href={`#${section.id}`}
-                className="text-xs font-bold px-3 py-2 rounded-md bg-muted/50 hover:bg-primary/10 hover:text-primary transition-colors whitespace-nowrap"
+                className={cn(
+                  "text-xs font-bold px-3 py-2 rounded-md transition-all whitespace-nowrap",
+                  activeSection === section.id 
+                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                    : "bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                )}
               >
                 {section.label}
               </a>
@@ -52,9 +103,14 @@ export default function ApiReferencePage() {
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="flex items-center gap-2 text-sm font-medium p-2 hover:bg-muted rounded-md cursor-pointer transition-colors text-muted-foreground hover:text-foreground"
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium p-2 rounded-md cursor-pointer transition-all border-l-2",
+                    activeSection === section.id
+                      ? "bg-primary/10 text-primary border-primary font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted border-transparent"
+                  )}
                 >
-                  <section.icon className="h-4 w-4" />
+                  <section.icon className={cn("h-4 w-4", activeSection === section.id ? "text-primary" : "text-muted-foreground")} />
                   {section.label}
                 </a>
               ))}
@@ -63,8 +119,8 @@ export default function ApiReferencePage() {
         </aside>
 
         <main className="flex-1 p-6 md:p-12 overflow-y-auto max-w-5xl">
-          <div className="space-y-16">
-            <section id="introduction">
+          <div className="space-y-24">
+            <section id="introduction" className="scroll-mt-24">
               <h1 className="text-4xl font-bold font-headline tracking-tight mb-4">REST API Reference</h1>
               <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
                 The Moxiz API is organized around REST. Our API has predictable resource-oriented URLs, accepts JSON-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes.
@@ -94,7 +150,9 @@ export default function ApiReferencePage() {
               </p>
               <div className="bg-card border border-border p-4 rounded-lg font-code text-sm flex justify-between items-center group">
                 <span className="text-emerald-500 font-bold truncate mr-4">https://moxiz-gateway.vercel.app/v1</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><Copy className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => copyToClipboard("https://moxiz-gateway.vercel.app/v1")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
             </section>
 
