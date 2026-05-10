@@ -1,167 +1,174 @@
-
 "use client";
 
 import { useState } from "react";
+import { useFirestore, useUser, useCollection } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
+import { useMemoFirebase } from "@/firebase/use-memo-firebase";
+import { ApiKeyService } from "@/services/api-key-service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Copy, RefreshCw, Key, ShieldCheck, Check } from "lucide-react";
+import { Copy, RefreshCw, Key, ShieldCheck, Check, Trash2, Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ApiKey } from "@/lib/types";
 
 export default function DevelopersPage() {
+  const { user } = useUser();
+  const db = useFirestore();
   const { toast } = useToast();
-  const [showSecret, setShowSecret] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showSecretId, setShowSecretId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const keysQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'merchants', user.uid, 'apiKeys'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [db, user]);
+
+  const { data: apiKeys, loading } = useCollection<ApiKey>(keysQuery);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedKey(label);
-    toast({
-      title: "Copied!",
-      description: `${label} has been copied to your clipboard.`,
-    });
-    setTimeout(() => setCopiedKey(null), 2000);
+    toast({ title: "Copied!", description: `${label} has been copied.` });
   };
 
-  const keys = {
-    test: {
-      public: "pk_test_51MzS2Z_moxiz_dev_99x",
-      secret: "sk_test_51MzS2Z_moxiz_secret_v001_88jk"
+  const handleCreateKey = async () => {
+    if (!db || !user) return;
+    setIsGenerating(true);
+    try {
+      await ApiKeyService.generateKey(db, user.uid, `Key ${new Date().toLocaleDateString()}`, 'TEST');
+      toast({ title: "Key Generated", description: "Your new API key is ready for use." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to generate key." });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    if (!db || !user) return;
+    try {
+      await ApiKeyService.revokeKey(db, user.uid, keyId);
+      toast({ title: "Key Revoked", description: "The API key has been disabled." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to revoke key." });
     }
   };
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold font-headline tracking-tight text-foreground">API Keys</h2>
-        <p className="text-muted-foreground">Manage your credentials to authenticate with the Moxiz Payment API.</p>
+    <div className="max-w-5xl space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold font-headline tracking-tight text-foreground">Developer Infrastructure</h2>
+          <p className="text-muted-foreground">Manage authentication credentials and webhook listeners.</p>
+        </div>
+        <Button onClick={handleCreateKey} disabled={isGenerating} className="gap-2 bg-primary">
+          {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          Generate New Key
+        </Button>
       </div>
 
       <div className="grid gap-6">
-        <Card className="border-accent/20 bg-accent/5">
+        <Card className="border-border/50 bg-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-accent" />
-              Developer Environment
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Active API Keys
             </CardTitle>
             <CardDescription>
-              Use these keys to simulate transactions without moving actual money.
+              Use these credentials to authenticate your server-side requests.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading ? (
+              <div className="h-32 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : apiKeys.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No API keys found. Generate one to get started.</div>
+            ) : (
+              <div className="space-y-4">
+                {apiKeys.map((key) => (
+                  <div key={key.id} className="p-4 border border-border/50 rounded-lg bg-background/50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h4 className="font-bold text-sm">{key.name}</h4>
+                        <Badge variant={key.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] h-4">
+                          {key.status}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{key.environment}</span>
+                      </div>
+                      {key.status === 'ACTIVE' && (
+                        <Button variant="ghost" size="sm" onClick={() => handleRevokeKey(key.id)} className="text-destructive hover:bg-destructive/10 h-7 text-xs">
+                          Revoke Key
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] uppercase text-muted-foreground">Public Key</Label>
+                        <div className="flex gap-2">
+                          <Input readOnly value={key.publicKey} className="font-code text-xs bg-muted/30" />
+                          <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.publicKey, "Public Key")}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] uppercase text-muted-foreground">Secret Key</Label>
+                        <div className="flex gap-2">
+                          <Input 
+                            readOnly 
+                            type={showSecretId === key.id ? "text" : "password"}
+                            value={key.secretKey} 
+                            className="font-code text-xs bg-muted/30" 
+                          />
+                          <Button variant="outline" size="sm" onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}>
+                            {showSecretId === key.id ? "Hide" : "Reveal"}
+                          </Button>
+                          <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.secretKey, "Secret Key")}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 bg-card">
+          <CardHeader>
+            <CardTitle>Webhook Endpoints</CardTitle>
+            <CardDescription>
+              Configure the callback URLs where Moxiz sends real-time transaction events.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold">Test Public Key</label>
+              <Label>Payload URL</Label>
               <div className="flex gap-2">
-                <Input 
-                  readOnly 
-                  value={keys.test.public} 
-                  className="font-code bg-card"
-                />
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => copyToClipboard(keys.test.public, "Public Key")}
-                >
-                  {copiedKey === "Public Key" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Test Secret Key</label>
-              <div className="flex gap-2">
-                <Input 
-                  readOnly 
-                  type={showSecret ? "text" : "password"}
-                  value={keys.test.secret} 
-                  className="font-code bg-card"
-                />
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowSecret(!showSecret)}
-                >
-                  {showSecret ? "Hide" : "Reveal"}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => copyToClipboard(keys.test.secret, "Secret Key")}
-                >
-                   {copiedKey === "Secret Key" ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-destructive flex items-center gap-1 mt-1">
-                 Never share your secret key in client-side code or public repositories.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Webhook Configuration</CardTitle>
-            <CardDescription>
-              Set the URL where Moxiz should send POST requests for transaction updates.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold">Payload URL</label>
-              <div className="flex gap-2">
-                <Input placeholder="https://api.yourdomain.com/webhooks/moxiz" className="bg-card" />
+                <Input placeholder="https://api.acme.com/webhooks/moxiz" className="bg-background/50" />
                 <Button className="bg-primary hover:bg-primary/90">Save Endpoint</Button>
               </div>
             </div>
-            <div className="p-4 bg-muted/50 rounded-lg border border-border">
-              <h4 className="text-sm font-bold mb-2">Active Subscriptions</h4>
-              <div className="flex flex-wrap gap-2">
-                {["transaction.success", "transaction.failed", "transaction.reversed"].map(event => (
-                  <div key={event} className="bg-card px-2 py-1 rounded border border-border text-xs font-code">
-                    {event}
-                  </div>
-                ))}
+            
+            <div className="p-4 border border-dashed border-border rounded-lg bg-muted/10">
+              <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Signing Secret</h5>
+              <div className="flex items-center justify-between">
+                <span className="font-code text-sm text-foreground">whsec_test_••••••••••••88jk</span>
+                <Button variant="link" size="sm" className="text-primary font-bold">Roll Secret</Button>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <div className="p-6 border border-border rounded-xl bg-card space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg">API Activity</h3>
-              <p className="text-sm text-muted-foreground">Recent requests made using your API keys.</p>
-            </div>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <RefreshCw className="h-3 w-3" /> Refresh Logs
-            </Button>
-          </div>
-          
-          <div className="space-y-3">
-            {[
-              { method: "POST", path: "/v1/payments", status: 201, time: "2 mins ago" },
-              { method: "GET", path: "/v1/transactions/tx_721", status: 200, time: "15 mins ago" },
-              { method: "POST", path: "/v1/payments", status: 400, time: "1 hour ago" }
-            ].map((log, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-2 border-b border-border last:border-0">
-                <div className="flex items-center gap-3">
-                  <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                    log.method === "POST" ? "bg-primary/20 text-primary" : "bg-accent/20 text-accent"
-                  )}>{log.method}</span>
-                  <span className="font-code text-xs">{log.path}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={cn(
-                    "font-bold",
-                    log.status >= 400 ? "text-destructive" : "text-emerald-500"
-                  )}>{log.status}</span>
-                  <span className="text-muted-foreground text-xs">{log.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

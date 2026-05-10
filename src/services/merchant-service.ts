@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Business logic for Merchant management.
  */
@@ -25,7 +24,6 @@ export class MerchantService {
         return { id: snap.id, ...snap.data() } as Merchant;
       }
     } catch (e: any) {
-      // If we are offline or get a connection error, throw a controlled error or return a mock
       if (e.code === 'unavailable' || e.message?.includes('offline')) {
         console.warn("Firestore unavailable, falling back to mock profile.");
         return {
@@ -39,7 +37,7 @@ export class MerchantService {
       throw e;
     }
 
-    const businessName = email === 'demo@moxiz.dev' ? 'Moxiz Demo Corp' : 'My Business';
+    const businessName = email === 'demo@moxiz.dev' || email === 'guest@moxiz.dev' ? 'Moxiz Demo Corp' : 'Acme Payments';
     
     const newMerchant: Omit<Merchant, 'id'> = {
       businessName,
@@ -58,25 +56,23 @@ export class MerchantService {
         }));
       });
 
-    // If it's a demo user, seed initial data
-    if (email === 'demo@moxiz.dev') {
+    // Seed initial infrastructure
+    ApiKeyService.generateKey(db, userId, 'Default Test Key', 'TEST');
+    
+    if (email.includes('demo') || email.includes('guest')) {
       this.seedDemoData(db, userId);
-    } else {
-      // Every merchant needs at least one API key to start
-      ApiKeyService.generateKey(db, userId, 'Default Test Key', 'TEST');
     }
 
     return { id: userId, ...newMerchant } as Merchant;
   }
 
   private static seedDemoData(db: Firestore, userId: string) {
-    // Generate initial infrastructure in background
-    ApiKeyService.generateKey(db, userId, 'Sandbox Legacy Key', 'TEST');
-    ApiKeyService.generateKey(db, userId, 'Main Production Key', 'LIVE');
-
+    ApiKeyService.generateKey(db, userId, 'Legacy Web Key', 'TEST');
+    
     const demoTransactions = [
-      { amount: 25000, customerName: 'Marcus Engineer', customerEmail: 'dev.lead@startup.io', status: 'SUCCESS' as const },
+      { amount: 45000, customerName: 'Marcus Engineer', customerEmail: 'dev.lead@startup.io', status: 'SUCCESS' as const },
       { amount: 1250, customerName: 'Alex Riviera', customerEmail: 'alex@cloud-services.net', status: 'FAILED' as const },
+      { amount: 21000, customerName: 'Jordan Dev', customerEmail: 'jordan@dev.co', status: 'SUCCESS' as const },
       { amount: 89000, customerName: 'Enterprise Billing', customerEmail: 'billing@enterprise.com', status: 'SUCCESS' as const },
       { amount: 3200, customerName: 'Jane Smith', customerEmail: 'jane.smith@design.co', status: 'PENDING' as const },
     ];
