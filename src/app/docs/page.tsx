@@ -44,7 +44,11 @@ export default function DocsPage() {
         <div className="p-8 bg-primary/5 border border-primary/20 rounded-2xl">
           <h4 className="font-bold text-primary mb-2">Need help?</h4>
           <p className="text-sm text-muted-foreground mb-4">Our engineering support team is available for technical consultations regarding your payment architecture.</p>
-          <Button variant="outline" className="border-primary/20 hover:bg-primary/10">Contact Engineering Support</Button>
+          <Button variant="outline" className="border-primary/20 hover:bg-primary/10" asChild>
+            <Link href="https://wa.me/2349036553377" target="_blank" rel="noopener noreferrer">
+              Contact Engineering Support
+            </Link>
+          </Button>
         </div>
       </main>
     </div>
