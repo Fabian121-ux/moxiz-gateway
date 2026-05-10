@@ -15,7 +15,9 @@ import {
   Rocket,
   Book,
   Globe,
-  Settings
+  Settings,
+  History,
+  FileCode
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -45,13 +47,14 @@ export default function LandingPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1 px-0 h-auto hover:bg-transparent">
-                  More <ChevronDown className="h-4 w-4" />
+                  Resources <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild><Link href="/status" className="cursor-pointer">System Status</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/changelog" className="cursor-pointer">Changelog</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link href="/guides" className="cursor-pointer">Engineering Guides</Link></DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link href="/status" className="cursor-pointer">System Status</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -103,6 +106,16 @@ export default function LandingPage() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link href="/changelog" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                      <History className="h-4 w-4 text-muted-foreground" /> Changelog
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/guides" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                      <FileCode className="h-4 w-4 text-muted-foreground" /> Engineering Guides
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/status" className="flex items-center gap-2 cursor-pointer py-2 px-3">
                       <Settings className="h-4 w-4 text-muted-foreground" /> System Status
                     </Link>
@@ -135,8 +148,8 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
             <Button size="lg" className="rounded-full bg-primary text-white h-12 px-8 text-md font-bold w-full sm:w-auto group" asChild>
-              <Link href="/dashboard/developers">
-                Get API Keys <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <Link href="/login">
+                Start Building <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="rounded-full h-12 px-8 text-md font-bold bg-white/5 border-white/10 hover:bg-white/10 w-full sm:w-auto" asChild>
