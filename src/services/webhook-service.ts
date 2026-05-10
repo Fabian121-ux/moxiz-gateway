@@ -1,38 +1,30 @@
 
 import { Firestore, collection, addDoc } from 'firebase/firestore';
-import { WebhookEvent } from '@/lib/types';
+import { WebhookEvent, Environment } from '@/lib/types';
 
 export class WebhookService {
   static async logEvent(
     db: Firestore,
     merchantId: string,
-    data: { eventType: string; payload: any }
+    data: { eventType: string; payload: any; environment: Environment }
   ): Promise<void> {
     const webhooksRef = collection(db, 'merchants', merchantId, 'webhooks');
     
-    const isSuccess = Math.random() > 0.1; // 90% success simulation
+    const isSuccess = Math.random() > 0.05; // 95% success simulation
+    const duration = Math.floor(150 + Math.random() * 400);
 
     const event: Omit<WebhookEvent, 'id'> = {
       eventType: data.eventType,
       payload: data.payload,
       status: isSuccess ? 'SENT' : 'FAILED',
-      retryCount: isSuccess ? 0 : Math.floor(Math.random() * 3),
-      responseStatus: isSuccess ? 200 : 500,
-      responseData: isSuccess ? '{"received": true}' : 'Internal Server Error',
+      retryCount: isSuccess ? 0 : 1,
+      responseStatus: isSuccess ? 200 : 502,
+      responseData: isSuccess ? '{"received": true}' : 'Bad Gateway',
+      durationMs: duration,
+      environment: data.environment,
       createdAt: new Date().toISOString(),
     };
 
-    addDoc(webhooksRef, event);
-  }
-
-  static async replayWebhook(
-    db: Firestore,
-    merchantId: string,
-    event: WebhookEvent
-  ): Promise<void> {
-    this.logEvent(db, merchantId, {
-      eventType: event.eventType,
-      payload: event.payload
-    });
+    await addDoc(webhooksRef, event);
   }
 }

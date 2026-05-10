@@ -1,7 +1,9 @@
 
 export type TransactionStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'REFUNDED' | 'REVERSED';
-export type Environment = 'TEST' | 'LIVE';
+export type Environment = 'SANDBOX' | 'STAGING' | 'PRODUCTION';
 export type MerchantStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+
+export type ApiKeyScope = 'payments.read' | 'payments.write' | 'webhooks.manage' | 'sandbox.execute';
 
 export interface Merchant {
   id: string;
@@ -21,6 +23,7 @@ export interface Transaction {
   customerName: string;
   paymentMethod?: string;
   metadata?: Record<string, any>;
+  environment: Environment;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +35,7 @@ export interface ApiKey {
   secretKey: string;
   environment: Environment;
   status: 'ACTIVE' | 'REVOKED';
+  scopes: ApiKeyScope[];
   createdAt: string;
 }
 
@@ -43,6 +47,32 @@ export interface WebhookEvent {
   retryCount: number;
   responseStatus?: number;
   responseData?: string;
-  lastAttempt?: string;
+  durationMs?: number;
+  environment: Environment;
+  createdAt: string;
+}
+
+export interface RequestLog {
+  id: string;
+  method: string;
+  path: string;
+  statusCode: number;
+  latencyMs: number;
+  ip: string;
+  userAgent: string;
+  requestPayload?: any;
+  responsePayload?: any;
+  environment: Environment;
+  createdAt: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  actor: string;
+  category: 'AUTH' | 'API_KEY' | 'TRANSACTION' | 'SETTINGS' | 'SYSTEM';
+  ip: string;
+  environment: Environment;
+  metadata?: any;
   createdAt: string;
 }

@@ -11,7 +11,8 @@ import {
   History, 
   Settings, 
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Transactions", href: "/dashboard/transactions", icon: History },
-  { label: "Sandbox", href: "/dashboard/sandbox", icon: Terminal },
+  { label: "Logs & Traffic", href: "/dashboard/logs", icon: Activity },
+  { label: "Console", href: "/dashboard/sandbox", icon: Terminal },
   { label: "Developers", href: "/dashboard/developers", icon: Code2 },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -58,7 +60,7 @@ export function Sidebar({ user, merchant }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
                 pathname === item.href
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/10 text-primary font-bold shadow-sm shadow-primary/5"
                   : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
               )}
             >
@@ -70,12 +72,12 @@ export function Sidebar({ user, merchant }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-border mt-auto">
-        <div className="bg-sidebar-accent p-3 rounded-lg mb-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Environment</div>
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-sm font-medium text-foreground">Test Mode</span>
-          </div>
+        <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl mb-6">
+           <h5 className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Service Health</h5>
+           <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-medium text-emerald-500/80">API Gateway Online</span>
+           </div>
         </div>
         
         <Button 

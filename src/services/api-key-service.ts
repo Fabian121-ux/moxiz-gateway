@@ -1,15 +1,15 @@
 
 import { Firestore, collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { ApiKey } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { ApiKey, ApiKeyScope, Environment } from '@/lib/types';
+import { AuditService } from './audit-service';
 
 export class ApiKeyService {
   static async generateKey(
     db: Firestore,
     merchantId: string,
     name: string,
-    env: 'TEST' | 'LIVE' = 'TEST'
+    env: Environment = 'SANDBOX',
+    scopes: ApiKeyScope[] = ['payments.read', 'payments.write']
   ): Promise<void> {
     const keysRef = collection(db, 'merchants', merchantId, 'apiKeys');
     
@@ -23,32 +23,35 @@ export class ApiKeyService {
       secretKey,
       environment: env,
       status: 'ACTIVE',
+      scopes,
       createdAt: new Date().toISOString(),
     };
 
-    addDoc(keysRef, newKey)
-      .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: keysRef.path,
-          operation: 'create',
-          requestResourceData: newKey
-        }));
-      });
+    await addDoc(keysRef, newKey);
+    
+    await AuditService.logAction(db, merchantId, {
+      action: `Generated API Key: ${name}`,
+      actor: 'system',
+      category: 'API_KEY',
+      environment: env,
+      metadata: { scopes }
+    });
   }
 
   static async revokeKey(
     db: Firestore,
     merchantId: string,
-    keyId: string
+    keyId: string,
+    env: Environment
   ): Promise<void> {
     const keyRef = doc(db, 'merchants', merchantId, 'apiKeys', keyId);
-    setDoc(keyRef, { status: 'REVOKED' }, { merge: true })
-      .catch(async () => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: keyRef.path,
-          operation: 'update',
-          requestResourceData: { status: 'REVOKED' }
-        }));
-      });
+    await setDoc(keyRef, { status: 'REVOKED' }, { merge: true });
+    
+    await AuditService.logAction(db, merchantId, {
+      action: `Revoked API Key`,
+      actor: 'system',
+      category: 'API_KEY',
+      environment: env
+    });
   }
 }
