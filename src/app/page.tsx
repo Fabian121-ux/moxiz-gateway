@@ -12,8 +12,10 @@ import {
   Braces,
   ChevronDown,
   LogIn,
-  UserPlus,
-  Rocket
+  Rocket,
+  Book,
+  Globe,
+  Settings
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -35,31 +37,33 @@ export default function LandingPage() {
           <span className="text-2xl font-bold tracking-tight text-foreground">Moxiz</span>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
-                    Resources <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem asChild><Link href="/docs">Documentation</Link></DropdownMenuItem>
-                  <DropdownMenuItem asChild><Link href="/api-reference">API Reference</Link></DropdownMenuItem>
-                  <DropdownMenuItem asChild><Link href="/status">System Status</Link></DropdownMenuItem>
-                  <DropdownMenuItem asChild><Link href="/changelog">Changelog</Link></DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+        <div className="flex items-center gap-6">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Documentation</Link>
+            <Link href="/api-reference" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">API Reference</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1 px-0 h-auto hover:bg-transparent">
+                  More <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild><Link href="/status" className="cursor-pointer">System Status</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/changelog" className="cursor-pointer">Changelog</Link></DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/guides" className="cursor-pointer">Engineering Guides</Link></DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
+          <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="text-sm font-bold border-primary/20 hover:bg-primary/10 text-primary gap-1 px-4 rounded-full">
                   Access Portal <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2">
+              <DropdownMenuContent align="end" className="w-64 p-2">
                 <DropdownMenuItem asChild className="p-3">
                   <Link href="/login" className="flex items-center gap-3 cursor-pointer text-primary font-bold">
                     <Rocket className="h-5 w-5" />
@@ -69,23 +73,41 @@ export default function LandingPage() {
                     </div>
                   </Link>
                 </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
+                
                 <DropdownMenuItem asChild>
                   <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3">
                     <LogIn className="h-4 w-4 text-muted-foreground" /> Merchant Sign In
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3">
-                    <UserPlus className="h-4 w-4 text-muted-foreground" /> Create Account
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                
                 <DropdownMenuItem asChild>
                   <Link href="/login" className="flex items-center gap-2 cursor-pointer py-2 px-3 text-accent font-semibold">
-                    <Zap className="h-4 w-4" /> Guest Access
+                    <Zap className="h-4 w-4" /> Guest Sandbox Access
                   </Link>
                 </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="md:hidden" />
+                
+                {/* Mobile-only menu items */}
+                <div className="md:hidden">
+                  <DropdownMenuItem asChild>
+                    <Link href="/docs" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                      <Book className="h-4 w-4 text-muted-foreground" /> Documentation
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/api-reference" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                      <Globe className="h-4 w-4 text-muted-foreground" /> API Reference
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/status" className="flex items-center gap-2 cursor-pointer py-2 px-3">
+                      <Settings className="h-4 w-4 text-muted-foreground" /> System Status
+                    </Link>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
