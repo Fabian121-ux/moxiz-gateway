@@ -16,13 +16,17 @@ import {
   Braces,
   ChevronDown,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  User,
+  LogIn,
+  UserPlus
 } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 
 export default function LandingPage() {
@@ -38,7 +42,7 @@ export default function LandingPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
@@ -52,9 +56,34 @@ export default function LandingPage() {
                 <DropdownMenuItem asChild><Link href="/changelog">Changelog</Link></DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground gap-1">
+                  Sign In <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer">
+                    <LogIn className="h-4 w-4" /> Merchant Portal
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4" /> Create Account
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2 cursor-pointer text-primary font-bold">
+                    <Zap className="h-4 w-4" /> Guest Access
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">Sign in</Link>
           <Button className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 rounded-full group" asChild>
             <Link href="/login">
               Start Building <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
