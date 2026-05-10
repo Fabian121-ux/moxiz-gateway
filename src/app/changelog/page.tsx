@@ -1,31 +1,31 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ArrowLeft, Rocket, Zap, Bug, Shield } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Rocket, Zap, Shield } from "lucide-react";
 
 export default function ChangelogPage() {
   const updates = [
     {
-      version: "v1.0.4",
-      date: "May 20, 2024",
+      version: "v1.3.2",
+      date: "March 15, 2026",
       title: "Enhanced Webhook Reliability",
-      desc: "Improved retry logic and added exponential backoff for failed webhook deliveries.",
+      desc: "Improved retry logic with exponential backoff and delivery observability. Added advanced webhook signature verification methods for increased security.",
       type: "feature",
       icon: Zap
     },
     {
-      version: "v1.0.3",
-      date: "May 12, 2024",
-      title: "Sandbox Simulator Improvements",
-      desc: "Added ability to simulate specific failure codes (402, 500) via sandbox headers.",
+      version: "v1.2.8",
+      date: "February 22, 2026",
+      title: "Sandbox Simulator Upgrades",
+      desc: "Added ability to simulate specific failure codes (402, 500) and lifecycle transitions including partial refunds and dispute simulations.",
       type: "improvement",
       icon: Rocket
     },
     {
-      version: "v1.0.2",
-      date: "April 28, 2024",
-      title: "API Key Rotation UI",
-      desc: "New intuitive interface for generating and revoking merchant API keys.",
+      version: "v1.2.1",
+      date: "January 10, 2026",
+      title: "API Key Segmentation",
+      desc: "New intuitive interface for generating environment-specific API keys with audit metadata and granular revocation controls.",
       type: "feature",
       icon: Shield
     }

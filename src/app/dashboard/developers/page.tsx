@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,10 +9,10 @@ import { ApiKeyService } from "@/services/api-key-service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Copy, RefreshCw, Key, ShieldCheck, Check, Trash2, Loader2, Plus } from "lucide-react";
+import { Copy, Key, ShieldCheck, Trash2, Loader2, Plus, Braces } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 import { ApiKey } from "@/lib/types";
 
 export default function DevelopersPage() {
@@ -72,103 +73,137 @@ export default function DevelopersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6">
-        <Card className="border-border/50 bg-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              Active API Keys
-            </CardTitle>
-            <CardDescription>
-              Use these credentials to authenticate your server-side requests.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loading ? (
-              <div className="h-32 flex items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : apiKeys.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No API keys found. Generate one to get started.</div>
-            ) : (
-              <div className="space-y-4">
-                {apiKeys.map((key) => (
-                  <div key={key.id} className="p-4 border border-border/50 rounded-lg bg-background/50 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-bold text-sm">{key.name}</h4>
-                        <Badge variant={key.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] h-4">
-                          {key.status}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{key.environment}</span>
-                      </div>
-                      {key.status === 'ACTIVE' && (
-                        <Button variant="ghost" size="sm" onClick={() => handleRevokeKey(key.id)} className="text-destructive hover:bg-destructive/10 h-7 text-xs">
-                          Revoke Key
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase text-muted-foreground">Public Key</Label>
-                        <div className="flex gap-2">
-                          <Input readOnly value={key.publicKey} className="font-code text-xs bg-muted/30" />
-                          <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.publicKey, "Public Key")}>
-                            <Copy className="h-3 w-3" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
+          <Card className="border-border/50 bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Active API Keys
+              </CardTitle>
+              <CardDescription>
+                Use these credentials to authenticate your server-side requests.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loading ? (
+                <div className="h-32 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : apiKeys.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No API keys found. Generate one to get started.</div>
+              ) : (
+                <div className="space-y-4">
+                  {apiKeys.map((key) => (
+                    <div key={key.id} className="p-4 border border-border/50 rounded-lg bg-background/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-bold text-sm">{key.name}</h4>
+                          <Badge variant={key.status === 'ACTIVE' ? 'default' : 'secondary'} className="text-[10px] h-4">
+                            {key.status}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{key.environment}</span>
+                        </div>
+                        {key.status === 'ACTIVE' && (
+                          <Button variant="ghost" size="sm" onClick={() => handleRevokeKey(key.id)} className="text-destructive hover:bg-destructive/10 h-7 text-xs">
+                            Revoke Key
                           </Button>
+                        )}
+                      </div>
+                      
+                      <div className="grid gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase text-muted-foreground">Public Key</Label>
+                          <div className="flex gap-2">
+                            <Input readOnly value={key.publicKey} className="font-code text-xs bg-muted/30" />
+                            <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.publicKey, "Public Key")}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase text-muted-foreground">Secret Key</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              readOnly 
+                              type={showSecretId === key.id ? "text" : "password"}
+                              value={key.secretKey} 
+                              className="font-code text-xs bg-muted/30" 
+                            />
+                            <Button variant="outline" size="sm" onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}>
+                              {showSecretId === key.id ? "Hide" : "Reveal"}
+                            </Button>
+                            <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.secretKey, "Secret Key")}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase text-muted-foreground">Secret Key</Label>
-                        <div className="flex gap-2">
-                          <Input 
-                            readOnly 
-                            type={showSecretId === key.id ? "text" : "password"}
-                            value={key.secretKey} 
-                            className="font-code text-xs bg-muted/30" 
-                          />
-                          <Button variant="outline" size="sm" onClick={() => setShowSecretId(showSecretId === key.id ? null : key.id)}>
-                            {showSecretId === key.id ? "Hide" : "Reveal"}
-                          </Button>
-                          <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyToClipboard(key.secretKey, "Secret Key")}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="border-border/50 bg-card">
-          <CardHeader>
-            <CardTitle>Webhook Endpoints</CardTitle>
-            <CardDescription>
-              Configure the callback URLs where Moxiz sends real-time transaction events.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Payload URL</Label>
-              <div className="flex gap-2">
-                <Input placeholder="https://api.acme.com/webhooks/moxiz" className="bg-background/50" />
-                <Button className="bg-primary hover:bg-primary/90">Save Endpoint</Button>
+        <div className="space-y-6">
+          <Card className="border-border/50 bg-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Braces className="h-5 w-5 text-accent" />
+                Base Infrastructure
+              </CardTitle>
+              <CardDescription>
+                Your integration endpoints for the Moxiz gateway.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs">API Base URL</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value="https://moxiz-gateway.vercel.app/v1" className="bg-muted/30 font-code text-xs" />
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard("https://moxiz-gateway.vercel.app/v1", "Base URL")}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <div className="p-4 border border-dashed border-border rounded-lg bg-muted/10">
-              <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Signing Secret</h5>
-              <div className="flex items-center justify-between">
-                <span className="font-code text-sm text-foreground">whsec_test_••••••••••••88jk</span>
-                <Button variant="link" size="sm" className="text-primary font-bold">Roll Secret</Button>
+              <div className="p-4 bg-black/40 border border-white/5 rounded-lg font-code text-[10px] text-muted-foreground">
+                <p className="text-accent mb-2">// Sample Request</p>
+                <p>curl https://moxiz-gateway.vercel.app/v1/payments \</p>
+                <p>  -u sk_test_...: \</p>
+                <p>  -d amount=2000 \</p>
+                <p>  -d currency="usd"</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50 bg-card">
+            <CardHeader>
+              <CardTitle>Webhook Endpoints</CardTitle>
+              <CardDescription>
+                Configure the callback URLs where Moxiz sends real-time transaction events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Payload URL</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="https://api.acme.com/webhooks/moxiz" className="bg-background/50" />
+                  <Button className="bg-primary hover:bg-primary/90">Save Endpoint</Button>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-dashed border-border rounded-lg bg-muted/10">
+                <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Signing Secret</h5>
+                <div className="flex items-center justify-between">
+                  <span className="font-code text-sm text-foreground">whsec_test_••••••••••••88jk</span>
+                  <Button variant="link" size="sm" className="text-primary font-bold">Roll Secret</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

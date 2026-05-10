@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ArrowLeft, Braces, Copy, Globe, Lock } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Copy, Globe, Lock } from "lucide-react";
 
 export default function ApiReferencePage() {
   return (
@@ -53,7 +53,7 @@ export default function ApiReferencePage() {
             <section className="space-y-4 pt-8 border-t border-border">
               <h2 className="text-2xl font-bold flex items-center gap-2"><Globe className="h-5 w-5 text-accent" /> Base URL</h2>
               <div className="bg-card border border-border p-4 rounded-lg font-code text-sm flex justify-between items-center">
-                <span className="text-emerald-500 font-bold">https://api.moxiz.io/v1</span>
+                <span className="text-emerald-500 font-bold">https://moxiz-gateway.vercel.app/v1</span>
                 <Button variant="ghost" size="icon" className="h-6 w-6"><Copy className="h-3 w-3" /></Button>
               </div>
             </section>
