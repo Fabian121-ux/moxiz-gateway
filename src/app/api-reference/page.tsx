@@ -33,7 +33,7 @@ export default function ApiReferencePage() {
   useEffect(() => {
     const observerOptions = {
       root: null,
-      rootMargin: "-20% 0px -70% 0px",
+      rootMargin: "-10% 0px -80% 0px", // Narrow band near top of viewport for precise highlighting
       threshold: 0,
     };
 
@@ -120,13 +120,22 @@ export default function ApiReferencePage() {
 
         <main className="flex-1 p-6 md:p-12 overflow-y-auto max-w-5xl">
           <div className="space-y-24">
+            {/* Introduction Section */}
             <section id="introduction" className="scroll-mt-24">
               <h1 className="text-4xl font-bold font-headline tracking-tight mb-4">REST API Reference</h1>
               <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
                 The Moxiz API is organized around REST. Our API has predictable resource-oriented URLs, accepts JSON-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes.
               </p>
+              <div className="mt-8 p-6 bg-primary/5 border border-primary/20 rounded-xl">
+                <h3 className="font-bold text-primary mb-2">Base URL</h3>
+                <p className="text-sm text-muted-foreground mb-4">All API requests should be made to this base URL:</p>
+                <code className="bg-black/40 px-3 py-1.5 rounded border border-white/10 text-xs font-code block w-fit">
+                  https://moxiz-gateway.vercel.app/v1
+                </code>
+              </div>
             </section>
 
+            {/* Authentication Section */}
             <section id="authentication" className="space-y-4 scroll-mt-24">
               <h2 className="text-2xl font-bold flex items-center gap-2 border-b border-border pb-2">
                 <Lock className="h-5 w-5 text-primary" /> Authentication
@@ -141,6 +150,7 @@ export default function ApiReferencePage() {
               </div>
             </section>
 
+            {/* API Keys Section */}
             <section id="api-keys" className="space-y-4 scroll-mt-24">
               <h2 className="text-2xl font-bold flex items-center gap-2 border-b border-border pb-2">
                 <Globe className="h-5 w-5 text-accent" /> API Infrastructure
@@ -156,6 +166,7 @@ export default function ApiReferencePage() {
               </div>
             </section>
 
+            {/* Payments Section */}
             <section id="payments" className="space-y-6 scroll-mt-24">
               <h2 className="text-2xl font-bold border-b border-border pb-2">Payments</h2>
               <p className="text-sm text-muted-foreground">The Payment API allows you to create and manage payment intents for your customers.</p>
@@ -174,6 +185,7 @@ export default function ApiReferencePage() {
               </div>
             </section>
 
+            {/* Customers Section */}
             <section id="customers" className="space-y-6 scroll-mt-24">
               <h2 className="text-2xl font-bold border-b border-border pb-2">Customers</h2>
               <p className="text-sm text-muted-foreground">Customer objects allow you to perform recurring billing and track payment history over time.</p>
@@ -186,6 +198,7 @@ export default function ApiReferencePage() {
               </div>
             </section>
 
+            {/* Refunds Section */}
             <section id="refunds" className="space-y-6 scroll-mt-24">
               <h2 className="text-2xl font-bold border-b border-border pb-2">Refunds</h2>
               <p className="text-sm text-muted-foreground">Refund objects allow you to reverse payments made by your customers, either partially or in full.</p>
@@ -203,6 +216,7 @@ export default function ApiReferencePage() {
               </div>
             </section>
 
+            {/* Webhooks Section */}
             <section id="webhooks" className="space-y-6 scroll-mt-24 pb-20">
               <h2 className="text-2xl font-bold border-b border-border pb-2">Webhooks</h2>
               <p className="text-sm text-muted-foreground">Webhooks are used to notify your application when an event happens in your account.</p>
