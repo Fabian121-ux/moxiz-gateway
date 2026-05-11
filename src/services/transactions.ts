@@ -1,5 +1,7 @@
 import { getAdminClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { analyzeTransactionRisk, flagTransaction } from './fraud';
+import { dispatchWebhook } from './webhooks';
 
 export type CreateTransactionParams = {
   merchantId: string;
@@ -18,15 +20,23 @@ export async function createTransaction(params: CreateTransactionParams) {
   const supabase = getAdminClient();
   const reference = `tx_${uuidv4().replace(/-/g, '').substring(0, 16)}`;
   
-  // Basic Fraud/Risk Check Simulation
-  const riskScore = Math.floor(Math.random() * 100);
+  // 1. Run Fraud Analysis
+  const risk = await analyzeTransactionRisk(
+    params.merchantId,
+    params.amount,
+    params.currency,
+    params.customerEmail,
+    params.metadata
+  );
+
   let status: 'pending' | 'failed' = 'pending';
   
-  if (riskScore > 90) {
+  // Block if risk is critical
+  if (risk.score > 90) {
     status = 'failed';
   }
 
-  const { data, error } = await supabase
+  const { data: transaction, error } = await supabase
     .from('transactions')
     .insert({
       merchant_id: params.merchantId,
@@ -37,7 +47,7 @@ export async function createTransaction(params: CreateTransactionParams) {
       customer_email: params.customerEmail,
       customer_name: params.customerName,
       metadata: params.metadata || {},
-      risk_score: riskScore,
+      risk_score: risk.score,
       environment: params.environment
     })
     .select()
@@ -45,50 +55,52 @@ export async function createTransaction(params: CreateTransactionParams) {
 
   if (error) throw error;
 
-  // If status is pending, simulate a delayed success/failure
-  if (status === 'pending') {
-    simulatePaymentCompletion(data.id);
+  // 2. Log fraud flags if risk is medium or higher
+  if (risk.score >= 30) {
+    for (const reason of risk.reasons) {
+      await flagTransaction(transaction.id, params.merchantId, reason, risk.level);
+    }
   }
 
-  return data;
+  // 3. If status is pending, simulate a delayed success/failure
+  if (status === 'pending') {
+    simulatePaymentCompletion(transaction);
+  } else {
+    // Dispatch failure immediately
+    await dispatchWebhook(params.merchantId, 'transaction.failed', transaction, params.environment);
+  }
+
+  return transaction;
 }
 
 /**
  * Simulates a payment completion after a delay.
  */
-async function simulatePaymentCompletion(transactionId: string) {
+async function simulatePaymentCompletion(transaction: any) {
   // Wait for 2-5 seconds
   const delay = Math.floor(Math.random() * 3000) + 2000;
   
   setTimeout(async () => {
     const supabase = getAdminClient();
-    const finalStatus = Math.random() > 0.1 ? 'success' : 'failed';
     
-    await supabase
+    // Most transactions succeed in sandbox
+    const finalStatus = Math.random() > 0.1 ? 'success' : 'failed';
+    const eventType = finalStatus === 'success' ? 'transaction.success' : 'transaction.failed';
+    
+    const { data: updatedTx, error } = await supabase
       .from('transactions')
       .update({ 
         status: finalStatus,
         updated_at: new Date().toISOString()
       })
-      .eq('id', transactionId);
+      .eq('id', transaction.id)
+      .select()
+      .single();
       
-    // Trigger Webhook (Future implementation)
-    // await triggerWebhook('transaction.updated', transactionId);
+    if (!error && updatedTx) {
+      // Trigger Webhook
+      await dispatchWebhook(transaction.merchant_id, eventType, updatedTx, transaction.environment);
+    }
   }, delay);
 }
 
-/**
- * Retrieves a transaction by reference.
- */
-export async function getTransactionByReference(reference: string, merchantId: string) {
-  const supabase = getAdminClient();
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .eq('reference', reference)
-    .eq('merchant_id', merchantId)
-    .single();
-
-  if (error) return null;
-  return data;
-}

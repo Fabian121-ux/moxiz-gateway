@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -35,11 +36,12 @@ interface SidebarProps {
 export function Sidebar({ user, merchant }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
 
-  const handleSignOut = () => {
-    localStorage.removeItem('moxiz_session');
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
     router.push("/");
-    window.location.reload();
+    router.refresh();
   };
 
   return (

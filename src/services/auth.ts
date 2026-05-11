@@ -6,10 +6,15 @@ import { createClient } from '@/lib/supabase';
 export async function signUpMerchant(email: string, password: string, businessName: string) {
   const supabase = createClient();
 
-  // 1. Sign up user
+  // 1. Sign up user with metadata
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        full_name: businessName, // Using business name as initial full name for the user
+      }
+    }
   });
 
   if (authError) throw authError;
@@ -17,11 +22,13 @@ export async function signUpMerchant(email: string, password: string, businessNa
 
   // 2. Create merchant record
   const slug = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const uniqueSlug = `${slug}-${Math.random().toString(36).substring(7)}`;
+
   const { data: merchant, error: merchantError } = await supabase
     .from('merchants')
     .insert({
       name: businessName,
-      slug: `${slug}-${Math.random().toString(36).substring(7)}`,
+      slug: uniqueSlug,
     })
     .select()
     .single();
