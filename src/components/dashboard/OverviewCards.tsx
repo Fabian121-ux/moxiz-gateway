@@ -1,79 +1,110 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase";
+import { useMerchant } from "@/hooks/use-merchant";
 import { CreditCard, TrendingUp, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFirestore, useUser, useCollection } from "@/firebase";
-import { collection, query } from "firebase/firestore";
-import { useMemoFirebase } from "@/firebase/use-memo-firebase";
-import { Transaction } from "@/lib/types";
 
 export function OverviewCards() {
-  const { user } = useUser();
-  const db = useFirestore();
+  const { merchant } = useMerchant();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  const transactionsQuery = useMemoFirebase(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'merchants', user.uid, 'transactions'));
-  }, [db, user]);
+  useEffect(() => {
+    if (merchant) {
+      fetchStats();
+    }
+  }, [merchant]);
 
-  const { data: transactions, loading } = useCollection<Transaction>(transactionsQuery);
+  const fetchStats = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('amount, status')
+      .eq('merchant_id', merchant.id);
+
+    if (data) setTransactions(data);
+    setLoading(false);
+  };
 
   const totalVolume = transactions
-    .filter(t => t.status === 'SUCCESS')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.status === 'success')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-  const successCount = transactions.filter(t => t.status === 'SUCCESS').length;
-  const failedCount = transactions.filter(t => t.status === 'FAILED').length;
+  const successCount = transactions.filter(t => t.status === 'success').length;
+  const failedCount = transactions.filter(t => t.status === 'failed').length;
   
-  const successRate = transactions.length > 0 
-    ? ((successCount / (successCount + failedCount || 1)) * 100).toFixed(1)
+  const totalRelevant = successCount + failedCount;
+  const successRate = totalRelevant > 0 
+    ? ((successCount / totalRelevant) * 100).toFixed(1)
     : "0.0";
 
-  const StatValue = ({ val }: { val: string | number }) => (
-    loading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mt-2" /> : <div className="text-2xl font-bold font-headline">{val}</div>
+  const StatValue = ({ val, color }: { val: string | number, color?: string }) => (
+    loading ? (
+      <div className="h-8 flex items-center">
+        <div className="h-6 w-24 bg-muted animate-pulse rounded-md" />
+      </div>
+    ) : (
+      <div className={`text-2xl font-bold font-headline tracking-tight ${color || 'text-foreground'}`}>
+        {val}
+      </div>
+    )
   );
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card className="border-border/50 bg-card">
+      <Card className="border-border/50 bg-card hover:border-primary/20 transition-all shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
-          <TrendingUp className="h-4 w-4 text-primary" />
+          <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Total Volume</CardTitle>
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+          </div>
         </CardHeader>
         <CardContent>
           <StatValue val={new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalVolume / 100)} />
-          <p className="text-xs text-muted-foreground">Successful transactions total</p>
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Successful transactions total</p>
         </CardContent>
       </Card>
-      <Card className="border-border/50 bg-card">
+
+      <Card className="border-border/50 bg-card hover:border-emerald-500/20 transition-all shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Successful Payments</CardTitle>
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Success Count</CardTitle>
+          <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+          </div>
         </CardHeader>
         <CardContent>
-          <StatValue val={successCount} />
-          <p className="text-xs text-muted-foreground">Count of all paid invoices</p>
+          <StatValue val={successCount} color="text-emerald-500" />
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Count of all paid invoices</p>
         </CardContent>
       </Card>
-      <Card className="border-border/50 bg-card">
+
+      <Card className="border-border/50 bg-card hover:border-destructive/20 transition-all shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Failed Transactions</CardTitle>
-          <AlertCircle className="h-4 w-4 text-destructive" />
+          <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Failed Count</CardTitle>
+          <div className="p-1.5 bg-destructive/10 rounded-lg">
+            <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+          </div>
         </CardHeader>
         <CardContent>
-          <StatValue val={failedCount} />
-          <p className="text-xs text-muted-foreground">Declined or unauthorized</p>
+          <StatValue val={failedCount} color="text-destructive" />
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Declined or unauthorized</p>
         </CardContent>
       </Card>
-      <Card className="border-border/50 bg-card">
+
+      <Card className="border-border/50 bg-card hover:border-accent/20 transition-all shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Payment Success Rate</CardTitle>
-          <CreditCard className="h-4 w-4 text-accent" />
+          <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Success Rate</CardTitle>
+          <div className="p-1.5 bg-accent/10 rounded-lg">
+            <CreditCard className="h-3.5 w-3.5 text-accent" />
+          </div>
         </CardHeader>
         <CardContent>
           <StatValue val={`${successRate}%`} />
-          <p className="text-xs text-muted-foreground">Ratio of success to failure</p>
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Ratio of success to failure</p>
         </CardContent>
       </Card>
     </div>
