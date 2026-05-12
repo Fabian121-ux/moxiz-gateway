@@ -64,6 +64,22 @@ export async function loginMerchant(email: string, password: string) {
 }
 
 /**
+ * Sends a magic link to the user's email.
+ */
+export async function signInWithMagicLink(email: string) {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/dashboard`,
+    },
+  });
+
+  if (error) throw error;
+  return true;
+}
+
+/**
  * Logs out the current user.
  */
 export async function logoutMerchant() {
@@ -71,3 +87,4 @@ export async function logoutMerchant() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
+

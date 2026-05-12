@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, ArrowRight, Loader2, Info, Eye, EyeOff, UserCircle, Rocket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { loginMerchant, signUpMerchant } from "@/services/auth";
+import { loginMerchant, signUpMerchant, signInWithMagicLink } from "@/services/auth";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -101,7 +101,30 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        if (!email) {
+                          toast({ variant: "destructive", title: "Email Required", description: "Enter your email to receive a magic link." });
+                          return;
+                        }
+                        setLoading(true);
+                        try {
+                          await signInWithMagicLink(email);
+                          toast({ title: "Check your email", description: "A magic link has been sent to your inbox." });
+                        } catch (err: any) {
+                          toast({ variant: "destructive", title: "Error", description: err.message });
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
+                    >
+                      Sign in with Magic Link
+                    </button>
+                  </div>
                   <div className="relative">
                     <Input 
                       id="password" 
@@ -126,6 +149,7 @@ export default function LoginPage() {
                 </Button>
               </form>
             </TabsContent>
+
 
             <TabsContent value="signup" className="mt-0">
               <form onSubmit={handleSignup} className="space-y-4">
