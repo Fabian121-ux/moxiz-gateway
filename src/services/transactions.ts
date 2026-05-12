@@ -1,4 +1,4 @@
-import { getAdminClient } from '@/lib/supabase';
+import { getAdminClient } from '@/lib/supabase-server';
 import { v4 as uuidv4 } from 'uuid';
 import { analyzeTransactionRisk, flagTransaction } from './fraud';
 import { dispatchWebhook } from './webhooks';
@@ -103,4 +103,24 @@ async function simulatePaymentCompletion(transaction: any) {
     }
   }, delay);
 }
+
+/**
+ * Retrieves a transaction by its reference.
+ */
+export async function getTransactionByReference(reference: string, merchantId: string) {
+  const supabase = getAdminClient();
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('reference', reference)
+    .eq('merchant_id', merchantId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    throw error;
+  }
+  return data;
+}
+
 

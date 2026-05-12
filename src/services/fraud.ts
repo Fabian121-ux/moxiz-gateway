@@ -1,4 +1,4 @@
-import { getAdminClient } from '@/lib/supabase';
+import { getAdminClient } from '@/lib/supabase-server';
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 

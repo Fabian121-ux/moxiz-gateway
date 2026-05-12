@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import crypto from 'node:crypto';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -58,17 +57,9 @@ export async function middleware(request: NextRequest) {
   // 1. Handle API Key Authentication for /api/v1 routes
   if (request.nextUrl.pathname.startsWith('/api/v1')) {
     const authHeader = request.headers.get('Authorization');
-    if (authHeader?.startsWith('Bearer sk_')) {
-      const apiKey = authHeader.split(' ')[1];
-      const hashedKey = crypto.createHash('sha256').update(apiKey).digest('hex');
-
-      // Note: We use a service role/admin client in the route handler usually, 
-      // but here we just check if it's a valid key structure and potentially verify if we had a lightweight way.
-      // For now, we'll let the route handlers do the heavy lifting of DB verification to keep middleware fast,
-      // OR we can do a quick check here.
-      
-      // Let's keep it simple: Route handlers already handle verification.
-      // But we can add a check for the header format.
+    if (authHeader && !authHeader.startsWith('Bearer sk_')) {
+      // Basic structure check
+      return NextResponse.json({ error: 'Invalid Authorization header format' }, { status: 401 });
     }
   }
 
@@ -89,14 +80,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
-

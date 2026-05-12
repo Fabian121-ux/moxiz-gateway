@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     if (isInternal) {
       // For internal simulation, we need the merchant from the session
-      const { createServerSupabaseClient } = await import('@/lib/supabase');
+      const { createServerSupabaseClient } = await import('@/lib/supabase-server');
       const supabase = await createServerSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       

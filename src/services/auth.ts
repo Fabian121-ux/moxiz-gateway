@@ -46,10 +46,14 @@ export async function signUpMerchant(email: string, password: string, businessNa
 
   if (linkError) throw linkError;
 
-  // 4. Generate initial Sandbox API Key automatically
+  // 4. Generate initial Sandbox API Key automatically via API
   try {
-    const { generateApiKey } = await import('./api-keys');
-    await generateApiKey(merchant.id, 'sandbox', 'Default Sandbox Key');
+    // We fetch to the API route so we don't bundle server code into the client
+    await fetch('/api/keys/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ environment: 'sandbox', name: 'Default Sandbox Key' })
+    });
   } catch (keyErr) {
     console.warn('Failed to generate initial API key:', keyErr);
     // Non-blocking
