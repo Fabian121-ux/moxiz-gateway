@@ -140,6 +140,28 @@ export default function WebhooksPage() {
     );
   }
 
+  const handleSendTestEvent = async () => {
+    if (endpoints.length === 0) {
+      toast({ variant: "destructive", title: "No Endpoints", description: "Register an endpoint first to test webhooks." });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/webhooks/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType: 'transaction.success' })
+      });
+
+      if (!response.ok) throw new Error('Failed to send test event');
+      
+      toast({ title: "Test Event Sent", description: "A transaction.success event has been queued." });
+      fetchData(); // Refresh the event list
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -213,11 +235,16 @@ export default function WebhooksPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button variant="outline" className="gap-2 h-11 px-5 rounded-full border-border/50 bg-card">
+          <Button 
+            variant="outline" 
+            onClick={handleSendTestEvent}
+            className="gap-2 h-11 px-5 rounded-full border-border/50 bg-card"
+          >
             <Zap className="h-4 w-4 text-primary" /> Send Test Event
           </Button>
         </div>
       </div>
+
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-border/50 bg-card overflow-hidden group">

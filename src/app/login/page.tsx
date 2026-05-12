@@ -53,12 +53,24 @@ export default function LoginPage() {
     }
   };
 
-  const handleGuestLogin = async () => {
-    // For demo purposes, we can have a guest login that uses a pre-existing account
-    setEmail("guest@moxiz.dev");
-    setPassword("moxiz_demo_123");
-    toast({ title: "Guest Access", description: "Using demo credentials." });
+  const handleFastTrack = async () => {
+    setLoading(true);
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const guestEmail = `guest_${randomSuffix}@moxiz.dev`;
+    const guestPass = "moxiz_demo_123";
+    const guestBusiness = `Guest Merchant ${randomSuffix}`;
+
+    try {
+      await signUpMerchant(guestEmail, guestPass, guestBusiness);
+      router.push("/dashboard");
+      toast({ title: "Fast Track Active", description: "Your demo merchant infrastructure has been provisioned." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Fast Track Failed", description: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
@@ -206,12 +218,13 @@ export default function LoginPage() {
             <Button 
               variant="outline" 
               className="w-full h-11 border-primary/20 hover:bg-primary/5 text-primary font-bold gap-2 rounded-xl" 
-              onClick={handleGuestLogin}
+              onClick={handleFastTrack}
               disabled={loading}
             >
-              <UserCircle className="h-4 w-4" />
-              Use Demo Credentials
+              <Rocket className="h-4 w-4" />
+              Fast Track: Continue as Guest Merchant
             </Button>
+
           </CardContent>
         </Tabs>
         <CardFooter className="justify-center border-t border-border/30 bg-muted/10">
