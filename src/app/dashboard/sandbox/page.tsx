@@ -1,76 +1,84 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useMerchant } from "@/hooks/use-merchant";
-import { createTransaction } from "@/services/transactions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Terminal, Zap, AlertTriangle, CheckCircle2, Clock, Loader2, Code, Braces } from "lucide-react";
+import { Terminal, CreditCard, Send, Loader2, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 export default function SandboxPage() {
   const { merchant, loading: merchantLoading } = useMerchant();
-  const { toast } = useToast();
+  const [amount, setAmount] = useState("2000");
+  const [currency, setCurrency] = useState("USD");
+  const [customerEmail, setCustomerEmail] = useState("dev@example.com");
+  const [customerName, setCustomerName] = useState("John Doe");
   const [loading, setLoading] = useState(false);
-  const [env, setEnv] = useState<'sandbox' | 'live'>('sandbox');
-  const [feed, setFeed] = useState<{msg: string, type: 'info' | 'error' | 'success'}[]>([
-    { msg: "Sandbox CLI v1.0.4 initialized", type: 'info' }
-  ]);
+  const [lastResponse, setLastResponse] = useState<any>(null);
+  const { toast } = useToast();
+  const supabase = createClient();
 
-  const [formData, setFormData] = useState({
-    amount: "2500",
-    currency: "USD",
-    email: "customer@demo.com",
-    status: "success" as any
-  });
-
-  const addToFeed = (msg: string, type: 'info' | 'error' | 'success' = 'info') => {
-    setFeed(prev => [...prev.slice(-8), { msg, type }]);
-  };
-
-  const handleSimulate = async () => {
-    if (!merchant) return;
+  const handleSimulatePayment = async () => {
     setLoading(true);
-    const amt = parseInt(formData.amount);
-    
-    addToFeed(`POST /api/v1/payments -d amount=${amt} -e ${env}`);
-    
+    setLastResponse(null);
+
     try {
-      // Simulate calling the internal service
-      const transaction = await createTransaction({
-        merchantId: merchant.id,
-        amount: amt,
-        currency: formData.currency,
-        customerEmail: formData.email,
-        environment: env,
-        status: formData.status.toLowerCase() as any
+      const response = await fetch('/api/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Simulation': 'true' 
+        },
+        body: JSON.stringify({
+          amount: parseInt(amount),
+          currency,
+          customer_email: customerEmail,
+          customer_name: customerName,
+        })
       });
-      
-      setTimeout(() => {
-        addToFeed(`HTTP 201 Created (ref: ${transaction.reference})`, 'success');
-        addToFeed(`Event triggered: payment.created`, 'info');
-        if (transaction.status === 'success') {
-          addToFeed(`Event triggered: payment.succeeded`, 'success');
-        }
+
+      const data = await response.json();
+      setLastResponse(data);
+
+      if (response.ok) {
+        toast({ title: "Payment Simulated", description: "The transaction has been created in pending state." });
         
-        toast({
-          title: "Simulation Success",
-          description: `Created ${transaction.status} transaction: ${transaction.reference}`,
-        });
-        setLoading(false);
-      }, 800);
-      
-    } catch (error: any) {
-      addToFeed(`Fatal: ${error.message}`, 'error');
+        // Subscribe to this specific transaction for updates
+        const channel = supabase
+          .channel(`tx_${data.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'transactions',
+              filter: `id=eq.${data.id}`
+            },
+            (payload) => {
+              setLastResponse(payload.new);
+              if (payload.new.status === 'success') {
+                toast({ title: "Payment Success", description: "The simulated payment was successful!" });
+              } else if (payload.new.status === 'failed') {
+                toast({ variant: "destructive", title: "Payment Failed", description: "The simulated payment failed." });
+              }
+              supabase.removeChannel(channel);
+            }
+          )
+          .subscribe();
+
+      } else {
+        throw new Error(data.error || 'Simulation failed');
+      }
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
       setLoading(false);
     }
   };
+
 
   if (merchantLoading) {
     return (
@@ -81,165 +89,156 @@ export default function SandboxPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold font-headline tracking-tight">Developer Console</h2>
-          <p className="text-muted-foreground text-sm font-medium uppercase tracking-widest flex items-center gap-2 mt-1">
-            <Code className="h-4 w-4 text-primary" /> Gateway: <span className="text-foreground">{merchant?.name}</span>
-          </p>
-        </div>
-        <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
-          <Button 
-            variant={env === 'sandbox' ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => setEnv('sandbox')}
-            className="rounded-lg h-8 text-xs px-4"
-          >
-            Sandbox
-          </Button>
-          <Button 
-            variant={env === 'live' ? 'default' : 'ghost'} 
-            size="sm" 
-            onClick={() => setEnv('live')}
-            className="rounded-lg h-8 text-xs px-4"
-          >
-            Live
-          </Button>
+          <h2 className="text-3xl font-bold font-headline tracking-tight text-foreground">Payment Sandbox</h2>
+          <p className="text-muted-foreground">Test your integration by simulating real payment flows.</p>
         </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
+        {/* Simulation Form */}
         <div className="lg:col-span-5 space-y-6">
-          <Card className="border-border/50 bg-card shadow-lg overflow-hidden">
-            <div className="h-1 bg-primary/50" />
+          <Card className="border-border/50 bg-card overflow-hidden">
+            <div className="h-1 bg-primary" />
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Braces className="h-5 w-5 text-primary" />
-                API Request Builder
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Simulate Charge
               </CardTitle>
               <CardDescription>
-                Construct payment requests to test integration logic.
+                Configure the payment parameters to trigger a mock transaction.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Amount (cents)</Label>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (cents)</Label>
                   <Input 
+                    id="amount" 
                     type="number" 
-                    value={formData.amount} 
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    className="bg-muted/20 border-border/40 font-code h-11 rounded-xl"
+                    value={amount} 
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="bg-muted/20 border-border/40 font-code"
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Simulation Outcome</Label>
-                  <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
-                    <SelectTrigger className="bg-muted/20 border-border/40 font-medium h-11 rounded-xl">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="success">Success (200 OK)</SelectItem>
-                      <SelectItem value="failed">Declined (402 Payment Required)</SelectItem>
-                      <SelectItem value="pending">Processing (202 Accepted)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Customer Email</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
                   <Input 
-                    value={formData.email} 
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="email@example.com"
-                    className="bg-muted/20 border-border/40 h-11 rounded-xl"
+                    id="currency" 
+                    value={currency} 
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="bg-muted/20 border-border/40 font-code"
                   />
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Customer Email</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={customerEmail} 
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  className="bg-muted/20 border-border/40"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Customer Name</Label>
+                <Input 
+                  id="name" 
+                  value={customerName} 
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="bg-muted/20 border-border/40"
+                />
+              </div>
 
               <div className="pt-4">
-                <Button className="w-full h-12 bg-primary hover:bg-primary/90 gap-2 text-sm font-bold rounded-xl shadow-lg shadow-primary/20" onClick={handleSimulate} disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                  Execute API Request
+                <Button 
+                  onClick={handleSimulatePayment} 
+                  disabled={loading} 
+                  className="w-full h-11 bg-primary font-bold shadow-lg shadow-primary/20"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                  Fire Simulation Request
                 </Button>
+              </div>
+
+              <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl flex gap-3 mt-4">
+                <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[10px] text-amber-600 leading-relaxed font-medium">
+                  Simulation requests trigger the same webhook pipeline as real API calls. Make sure your webhook endpoints are configured to receive <strong>transaction.success</strong> events.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* API Response & Terminal */}
+        <div className="lg:col-span-7 space-y-6">
+          <Card className="border-border/50 bg-black overflow-hidden shadow-2xl">
+            <CardHeader className="border-b border-white/5 bg-white/5 px-4 py-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-accent" />
+                <CardTitle className="text-xs font-bold text-white/70 uppercase tracking-widest">Gateway Response</CardTitle>
+              </div>
+              {lastResponse && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[9px] font-bold text-emerald-500 uppercase">201 Created</span>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[400px] overflow-auto p-6 font-code text-[11px] text-emerald-500/80 leading-relaxed">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-4 text-primary/40">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="animate-pulse">Awaiting infrastructure response...</span>
+                  </div>
+                ) : lastResponse ? (
+                  <pre className="animate-in fade-in slide-in-from-top-2 duration-500">
+                    {JSON.stringify(lastResponse, null, 2)}
+                  </pre>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-white/10 select-none">
+                    <Terminal className="h-20 w-20 mb-4 opacity-10" />
+                    <p className="font-bold tracking-widest uppercase">Console Idle</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card overflow-hidden">
-             <div className="px-4 py-3 bg-muted/20 border-b border-border/50 flex items-center justify-between">
-               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Curl Template</span>
-             </div>
-             <CardContent className="pt-6">
-                <div className="p-4 bg-black/60 rounded-xl border border-white/5 font-code text-[11px] text-primary/90 overflow-x-auto shadow-inner">
-                  <p>curl https://moxiz-gateway.vercel.app/api/v1/payments \</p>
-                  <p className="pl-4 text-white/60">-u sk_{env}_... \</p>
-                  <p className="pl-4 text-white/60">-d amount={formData.amount} \</p>
-                  <p className="pl-4 text-white/60">-d currency="USD" \</p>
-                  <p className="pl-4 text-white/60">-d status="{formData.status}"</p>
+          {lastResponse && lastResponse.status === 'pending' && (
+            <Card className="border-border/50 bg-card overflow-hidden animate-in fade-in zoom-in-95 duration-700">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                 </div>
-             </CardContent>
-          </Card>
-        </div>
+                <div>
+                  <h4 className="text-sm font-bold">Transaction Queued</h4>
+                  <p className="text-xs text-muted-foreground">Reference: <span className="font-code">{lastResponse.reference}</span>. Webhook notification will arrive in ~3 seconds.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <div className="flex-1 min-h-[450px] bg-[#0c0e12] border border-border/50 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-            <div className="h-12 bg-muted/20 border-b border-border/50 flex items-center justify-between px-6 z-10">
-               <div className="flex gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-red-500/30 border border-red-500/50" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/30 border border-yellow-500/50" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-green-500/30 border border-green-500/50" />
-               </div>
-               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                  <Terminal className="h-3 w-3 text-primary" /> Live Debug Feed
-               </div>
-            </div>
-            <div className="flex-1 p-6 font-code text-[12px] space-y-3 overflow-y-auto z-10">
-              {feed.map((item, i) => (
-                <div key={i} className={cn(
-                  "flex gap-3 animate-in fade-in slide-in-from-left-2 duration-300",
-                  item.type === 'error' ? 'text-destructive' :
-                  item.type === 'success' ? 'text-emerald-400' :
-                  'text-primary/70'
-                )}>
-                  <span className="shrink-0 opacity-40">[{new Date().toLocaleTimeString()}]</span>
-                  <span className="shrink-0 text-white/40">$</span>
-                  <span className="leading-relaxed text-white/90">{item.msg}</span>
+          {lastResponse && lastResponse.status === 'failed' && (
+            <Card className="border-border/50 bg-card overflow-hidden animate-in fade-in zoom-in-95 duration-700">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
                 </div>
-              ))}
-              {loading && (
-                <div className="flex items-center gap-2 text-primary animate-pulse font-bold ml-11">
-                   <Loader2 className="h-3 w-3 animate-spin" />
-                   <span>Negotiating handshake...</span>
+                <div>
+                  <h4 className="text-sm font-bold">Transaction Rejected</h4>
+                  <p className="text-xs text-muted-foreground">Reason: Risk score exceeded safety threshold ({lastResponse.risk_score}). Check fraud logs for details.</p>
                 </div>
-              )}
-            </div>
-            <div className="p-4 bg-muted/5 border-t border-border/50 text-[10px] text-muted-foreground/60 italic px-6">
-               Moxiz Gateway v1.0 • Node Environment • Listening for {env} events
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-             {[
-               { icon: CheckCircle2, label: "Success Path", color: "text-emerald-500", status: 'success' },
-               { icon: AlertTriangle, label: "Fail Path", color: "text-destructive", status: 'failed' },
-               { icon: Clock, label: "Async Path", color: "text-orange-500", status: 'pending' }
-             ].map((preset) => (
-               <Button 
-                key={preset.label}
-                variant="outline" 
-                className={cn(
-                  "h-24 flex-col gap-3 border-border/50 hover:bg-muted/10 rounded-2xl transition-all duration-300",
-                  formData.status === preset.status && "bg-muted/20 border-primary/50 shadow-lg shadow-primary/5"
-                )}
-                onClick={() => setFormData({...formData, status: preset.status})}
-               >
-                 <preset.icon className={cn("h-6 w-6", preset.color)} />
-                 <span className="text-[10px] uppercase font-bold tracking-widest">{preset.label}</span>
-               </Button>
-             ))}
-          </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

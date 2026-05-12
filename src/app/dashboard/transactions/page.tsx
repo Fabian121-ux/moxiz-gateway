@@ -19,12 +19,29 @@ export default function TransactionsPage() {
   useEffect(() => {
     if (merchant) {
       fetchTransactions();
+
+      const channel = supabase
+        .channel('transactions_list')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'transactions',
+            filter: `merchant_id=eq.${merchant.id}`
+          },
+          () => fetchTransactions()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [merchant]);
 
   const fetchTransactions = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('transactions')
       .select('*')
       .eq('merchant_id', merchant.id)

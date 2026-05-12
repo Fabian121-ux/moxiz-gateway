@@ -26,7 +26,6 @@ export default function DashboardLayout({
 }) {
   const { merchant, loading: merchantLoading } = useMerchant();
   const [user, setUser] = useState<any>(null);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [env, setEnv] = useState<'sandbox' | 'live'>('sandbox');
   const router = useRouter();
   const supabase = createClient();
@@ -43,46 +42,32 @@ export default function DashboardLayout({
     getUser();
   }, [router]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (merchantLoading) {
-      interval = setInterval(() => {
-        setLoadingStep((prev) => (prev + 1) % LOADING_MESSAGES.length);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [merchantLoading]);
-
   const handleEnvChange = (newEnv: 'sandbox' | 'live') => {
     setEnv(newEnv);
-    // In a real app, we'd update context here
   };
 
+  // Snappy, high-end loading state
   if (merchantLoading || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-8 max-w-sm w-full animate-in fade-in zoom-in-95 duration-500">
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-full bg-primary/10 animate-ping opacity-30" />
-            <div className="relative bg-primary p-5 rounded-2xl shadow-2xl shadow-primary/30 border border-white/10 flex items-center justify-center">
-              <ShieldCheck className="h-10 w-10 text-white animate-pulse" />
-            </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background animate-in fade-in duration-300">
+        <div className="relative">
+          <div className="absolute -inset-8 rounded-full bg-primary/20 animate-pulse blur-2xl" />
+          <div className="relative bg-primary p-6 rounded-3xl shadow-2xl shadow-primary/40 border border-white/20">
+            <ShieldCheck className="h-12 w-12 text-white animate-in zoom-in duration-500" />
           </div>
-
-          <div className="flex flex-col items-center gap-4 text-center">
-            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              Moxiz <span className="text-primary/50 font-code font-normal text-xs px-2 py-0.5 border border-primary/20 rounded-md">v2.0.0</span>
-            </h2>
-            <div className="h-4 flex items-center justify-center mt-2">
-              <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-muted-foreground/60 animate-in fade-in slide-in-from-bottom-2 duration-700 ease-out" key={loadingStep}>
-                {LOADING_MESSAGES[loadingStep]}
-              </p>
-            </div>
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <h2 className="text-xl font-bold tracking-tighter text-foreground italic">MOXIZ</h2>
+          <div className="flex gap-1">
+             <div className="h-1 w-1 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+             <div className="h-1 w-1 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+             <div className="h-1 w-1 rounded-full bg-primary animate-bounce" />
           </div>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="flex min-h-screen bg-background animate-in fade-in duration-700">

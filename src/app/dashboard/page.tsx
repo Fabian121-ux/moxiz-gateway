@@ -20,11 +20,32 @@ export default function DashboardPage() {
   useEffect(() => {
     if (merchant) {
       fetchRecentActivity();
+      
+      // Enable Realtime Subscription
+      const channel = supabase
+        .channel('dashboard_activity')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'transactions',
+            filter: `merchant_id=eq.${merchant.id}`
+          },
+          () => {
+            fetchRecentActivity();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [merchant]);
 
   const fetchRecentActivity = async () => {
-    setLoading(true);
+    // Note: No setLoading(true) here to prevent flickering on updates
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -35,6 +56,7 @@ export default function DashboardPage() {
     if (data) setRecentTransactions(data);
     setLoading(false);
   };
+
 
   if (merchantLoading) {
     return (
